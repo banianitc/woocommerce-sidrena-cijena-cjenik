@@ -1,0 +1,54 @@
+name: Quality checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  php-lint:
+    name: PHP ${{ matrix.php }} syntax
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.3']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Lint plugin PHP files
+        shell: bash
+        run: find . -type f -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
+
+      - name: Run plugin static checks
+        run: node ./tests/static-check.mjs
+
+      - name: Build release package
+        shell: pwsh
+        run: ./scripts/build-release.ps1
+
+      - name: Verify release package
+        shell: pwsh
+        run: |
+          $archive = Get-ChildItem ./dist/sidrena-cijena-v*.zip | Select-Object -First 1
+          if (-not $archive) { throw 'Release archive was not created.' }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($archive.FullName)
+          try {
+            $names = @($zip.Entries.FullName)
+            if ($names.Count -ne 3) { throw "Unexpected archive entry count: $($names.Count)" }
+            foreach ($required in @('sidrena-cijena/sidrena-cijena.php', 'sidrena-cijena/includes/cjenik.php', 'sidrena-cijena/readme.txt')) {
+              if ($required -notin $names) { throw "Missing archive entry: $required" }
+            }
+          } finally {
+            $zip.Dispose()
+          }

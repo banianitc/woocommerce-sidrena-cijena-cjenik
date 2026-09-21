@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.php text diff=php
+*.md text
+*.txt text
+*.yml text
+*.ps1 text eol=crlf
