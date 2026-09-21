@@ -1,9 +1,13 @@
 [CmdletBinding()]
 param(
-    [string]$OutputDirectory = (Join-Path (Join-Path $PSScriptRoot '..') 'dist')
+    [string]$OutputDirectory = ''
 )
 
 $ErrorActionPreference = 'Stop'
+
+if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
+    $OutputDirectory = Join-Path (Join-Path $PSScriptRoot '..') 'dist'
+}
 
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $mainPluginFile = Join-Path $repositoryRoot 'sidrena-cijena.php'
