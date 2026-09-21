@@ -100,15 +100,18 @@ const runtimeSources = files.map((file) => {
 const main = runtimeSources[0];
 const cjenik = runtimeSources[1];
 const catalogRuntime = runtimeSources.slice(2).join('\n');
+const allRuntime = runtimeSources.join('\n');
 const combined = [main, cjenik].join('\n');
 const readme = fs.readFileSync(path.join(root, 'readme.txt'), 'utf8');
 
 assert(main.indexOf("'src/Config.php'") < main.indexOf("'includes/cjenik.php'"), 'Config must be loaded before cjenik.php');
 assert(main.includes('Config::registerLegacyConstants()'), 'Legacy constant compatibility registration is missing');
-assert(main.includes('* Version: 1.2.2'), 'Plugin header version is not 1.2.2');
+assert(main.includes('* Version: 1.2.3'), 'Plugin header version is not 1.2.3');
 assert(main.includes('* Author: Matija Gračanin'), 'Plugin author is not Matija Gračanin');
 assert(main.includes('* Author Email: matijag@gmail.com'), 'Plugin author email is missing');
-assert(readme.includes('Stable tag: 1.2.2'), 'Readme stable tag is not 1.2.2');
+assert(readme.includes('Stable tag: 1.2.3'), 'Readme stable tag is not 1.2.3');
+assert(catalogRuntime.includes('namespace SidrenaCijenaCjenik'), 'Neutral plugin namespace is missing');
+assert(!allRuntime.includes('MatijaGracanin\\SidrenaCijena'), 'Legacy personal namespace is still present');
 assert(main.includes("'pomoc'           => __('Pomoć'"), 'Help tab navigation is missing');
 assert(main.includes('function sidrena_cijena_render_help_tab()'), 'Help tab renderer is missing');
 assert(main.includes('[sidrena_cjenik format="oba" arhiva="da"]'), 'Help tab shortcode documentation is incomplete');

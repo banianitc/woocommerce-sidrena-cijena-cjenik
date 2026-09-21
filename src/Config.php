@@ -1,6 +1,6 @@
 <?php
 
-namespace MatijaGracanin\SidrenaCijena;
+namespace SidrenaCijenaCjenik;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
 
 final class Config
 {
-    const VERSION = '1.2.2';
+    const VERSION = '1.2.3';
     const REFERENCE_DATE = '10.09.2026.';
     const ANCHOR_META_KEY = '_anchor_price';
 

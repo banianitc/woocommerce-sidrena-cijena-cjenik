@@ -2,6 +2,12 @@
 
 Sve značajne promjene projekta bilježe se u ovoj datoteci.
 
+## [1.2.3] - 2026-09-21
+
+### Refaktorirano
+
+- interni PHP namespace promijenjen je u neutralni `SidrenaCijenaCjenik`
+
 ## [1.2.2] - 2026-09-21
 
 ### Ispravljeno

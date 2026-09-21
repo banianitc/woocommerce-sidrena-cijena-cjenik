@@ -1,6 +1,6 @@
 <?php
 
-namespace MatijaGracanin\SidrenaCijena\Catalog;
+namespace SidrenaCijenaCjenik\Catalog;
 
 if (!defined('ABSPATH')) {
     exit;

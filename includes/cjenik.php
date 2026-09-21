@@ -12,7 +12,7 @@
  * see NOTICE.md for provenance and later modifications.
  */
 
-use MatijaGracanin\SidrenaCijena\Config;
+use SidrenaCijenaCjenik\Config;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -57,7 +57,7 @@ function cjenik_engine() {
     static $engine = null;
 
     if ($engine === null) {
-        $engine = new \MatijaGracanin\SidrenaCijena\Catalog\CatalogEngine();
+        $engine = new \SidrenaCijenaCjenik\Catalog\CatalogEngine();
     }
 
     return $engine;
@@ -362,8 +362,8 @@ function cjenik_build_row($product, $parent = null) {
 
 // 4. Gradnja CSV-a
 function cjenik_build_csv($rows) {
-    $headers = \MatijaGracanin\SidrenaCijena\Catalog\CatalogEngine::columns();
-    $text_columns = array_fill_keys(\MatijaGracanin\SidrenaCijena\Catalog\CatalogEngine::textColumns(), true);
+    $headers = \SidrenaCijenaCjenik\Catalog\CatalogEngine::columns();
+    $text_columns = array_fill_keys(\SidrenaCijenaCjenik\Catalog\CatalogEngine::textColumns(), true);
 
     $delimiter = get_option(CJENIK_DELIMITER_OPTION, CJENIK_DEFAULT_DELIMITER);
     if (!array_key_exists($delimiter, cjenik_delimiter_choices())) {
@@ -379,7 +379,7 @@ function cjenik_build_csv($rows) {
         foreach ($headers as $header) {
             $value = isset($row[$header]) ? $row[$header] : '';
             if (isset($text_columns[$header])) {
-                $value = \MatijaGracanin\SidrenaCijena\Catalog\CsvStreamWriter::spreadsheetSafeText($value);
+                $value = \SidrenaCijenaCjenik\Catalog\CsvStreamWriter::spreadsheetSafeText($value);
             }
             $ordered_row[] = $value;
         }
@@ -405,7 +405,7 @@ function cjenik_build_xml($rows, $meta) {
 
     foreach ($rows as $row) {
         $item = $xml->addChild('proizvod');
-        foreach (\MatijaGracanin\SidrenaCijena\Catalog\CatalogEngine::columns() as $key) {
+        foreach (\SidrenaCijenaCjenik\Catalog\CatalogEngine::columns() as $key) {
             $value = isset($row[$key]) ? $row[$key] : '';
             // Assignment through a SimpleXML node safely escapes XML special characters.
             $child = $item->addChild($key);
