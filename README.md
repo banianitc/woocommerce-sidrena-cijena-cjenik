@@ -22,7 +22,7 @@ Dodatak je napravljen kao tehnička pomoć vlasnicima internetskih trgovina koje
 - ručno i dnevno generiranje cjenika
 - odgođeno osvježavanje nakon promjene proizvoda ili zalihe
 - najmanje 30 dana arhive cjenika
-- izvoz varijacija, zalihe, kategorija, brenda, barkoda i podataka o posebnom obliku prodaje
+- izvoz varijacija, zalihe, brenda, barkoda i podataka o posebnom obliku prodaje
 - pregled spremnosti podataka i prikaz zadnje pogreške
 - ugrađena pomoć i dijagnostika
 - podrška za WooCommerce HPOS te Cart i Checkout Blocks
@@ -136,7 +136,6 @@ Ovisno o vrsti proizvoda i dostupnim podacima, cjenik može sadržavati:
 - sidrenu cijenu
 - barkod
 - dostupnost
-- kategorije proizvoda
 - podatke o varijacijama
 
 Dodatak podržava WooCommerce Brands i više često korištenih dodataka za brendove i barkodove.

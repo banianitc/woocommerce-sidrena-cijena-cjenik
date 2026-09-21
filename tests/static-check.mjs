@@ -6,6 +6,9 @@ const root = path.resolve(import.meta.dirname, '..');
 const files = [
   path.join(root, 'sidrena-cijena.php'),
   path.join(root, 'includes', 'cjenik.php'),
+  path.join(root, 'src', 'Catalog', 'State.php'),
+  path.join(root, 'src', 'Catalog', 'StreamWriters.php'),
+  path.join(root, 'src', 'Catalog', 'CatalogEngine.php'),
 ];
 
 const failures = [];
@@ -86,23 +89,24 @@ function checkBalanced(source, filename) {
   assert(stack.length === 0, `${filename}: ${stack.length} unclosed delimiter(s)`);
 }
 
-const sources = files.map((file) => {
+const runtimeSources = files.map((file) => {
   assert(fs.existsSync(file), `Missing file: ${file}`);
   const source = fs.readFileSync(file, 'utf8');
   checkBalanced(source, path.basename(file));
   return source;
 });
 
-const combined = sources.join('\n');
-const main = sources[0];
-const cjenik = sources[1];
+const main = runtimeSources[0];
+const cjenik = runtimeSources[1];
+const catalogRuntime = runtimeSources.slice(2).join('\n');
+const combined = [main, cjenik].join('\n');
 const readme = fs.readFileSync(path.join(root, 'readme.txt'), 'utf8');
 
 assert(main.indexOf("define('SIDRENA_CIJENA_META_KEY'") < main.indexOf("require_once plugin_dir_path"), 'Plugin constants must be defined before cjenik.php is loaded');
-assert(main.includes('* Version: 1.1.5'), 'Plugin header version is not 1.1.5');
+assert(main.includes('* Version: 1.2.0'), 'Plugin header version is not 1.2.0');
 assert(main.includes('* Author: Matija Gračanin'), 'Plugin author is not Matija Gračanin');
 assert(main.includes('* Author Email: matijag@gmail.com'), 'Plugin author email is missing');
-assert(readme.includes('Stable tag: 1.1.5'), 'Readme stable tag is not 1.1.5');
+assert(readme.includes('Stable tag: 1.2.0'), 'Readme stable tag is not 1.2.0');
 assert(main.includes("'pomoc'           => __('Pomoć'"), 'Help tab navigation is missing');
 assert(main.includes('function sidrena_cijena_render_help_tab()'), 'Help tab renderer is missing');
 assert(main.includes('[sidrena_cjenik format="oba" arhiva="da"]'), 'Help tab shortcode documentation is incomplete');
@@ -151,14 +155,29 @@ assert(cjenik.includes("add_rewrite_rule('^cjenik-proizvoda\\.csv$'"), 'Stable p
 assert(cjenik.includes("add_rewrite_rule('^cjenik-proizvoda\\.xml$'"), 'Stable public XML route is missing');
 assert(cjenik.includes('CJENIK_MIN_RETENTION_DAYS'), 'Retention guard is missing');
 assert(cjenik.includes('cjenik_get_inherited_meta($product, $parent, SIDRENA_CIJENA_META_KEY)'), 'Anchor price export is missing');
-assert(cjenik.includes("'csv_download_name'"), 'Timestamped CSV download filename is missing');
-assert(cjenik.includes("'xml_download_name'"), 'Timestamped XML download filename is missing');
+assert(catalogRuntime.includes("$format . '_download_name'"), 'Timestamped download filenames are missing');
 assert(cjenik.includes('encoding="UTF-8"'), 'Explicit UTF-8 XML encoding is missing');
 assert(cjenik.includes("'mime'   => 'application/xml; charset=utf-8'"), 'XML content type is missing');
+assert(catalogRuntime.includes('class GenerationLock'), 'Shared generation lock is missing');
+assert(catalogRuntime.includes('function refresh()'), 'Generation lock lease renewal is missing');
+assert(catalogRuntime.includes('class DirtyState'), 'Versioned dirty state is missing');
+assert(catalogRuntime.includes('spreadsheetSafeText'), 'CSV formula neutralization is missing');
+assert(catalogRuntime.includes("fputcsv($this->handle, $values, $this->delimiter, '\"', '')"), 'CSV writer must use an explicit empty escape parameter');
+assert(catalogRuntime.includes("'limit' => self::PAGE_SIZE"), 'Catalog generation is not paginated');
+assert(catalogRuntime.includes('rename($operation'), 'Atomic staged publication is missing');
+assert(!cjenik.includes("wp_schedule_event($next->getTimestamp(), 'daily'"), 'Fixed-interval daily scheduling is still present');
+assert(cjenik.includes('wp_schedule_single_event($next->getTimestamp(), CJENIK_CRON_HOOK)'), 'DST-safe single daily event is missing');
+
+const publicHandler = cjenik.slice(
+  cjenik.indexOf('function cjenik_handle_public_download()'),
+  cjenik.indexOf('function cjenik_get_archive_files('),
+);
+assert(!publicHandler.includes('cjenik_generate('), 'Anonymous public download must not generate the catalog');
+assert(fs.existsSync(path.join(root, 'NOTICE.md')), 'GPL provenance notice is missing');
 
 if (failures.length > 0) {
   console.error(failures.map((failure) => `FAIL: ${failure}`).join('\n'));
   process.exit(1);
 }
 
-console.log(`OK: static checks passed for ${files.length} PHP files (${functionNames.length} functions, ${callbackNames.length} hooks).`);
+console.log(`OK: static checks passed for ${files.length} PHP files (${functionNames.length} global functions, ${callbackNames.length} hooks).`);

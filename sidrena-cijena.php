@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Sidrena Cijena i Cjenik | Matija Gračanin
  * Description: Prikaz sidrene cijene i javni strojno čitljivi cjenik za WooCommerce prema odlukama NN 101/2026.
- * Version: 1.1.5
+ * Version: 1.2.0
  * Requires at least: 6.0
  * Tested up to: 7.1
  * Requires PHP: 7.4
@@ -11,10 +11,16 @@
  * Author: Matija Gračanin
  * Author URI: mailto:matijag@gmail.com
  * Author Email: matijag@gmail.com
- * Text Domain: sidrena-cijena-i-cjenik-aplitap
+ * Text Domain: sidrena-cijena
  * Requires Plugins: woocommerce
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ */
+
+/*
+ * Portions of the original GPLv2-or-later implementation were published by
+ * Aplitap digital. Later architecture and features are by Matija Gračanin.
+ * See NOTICE.md for provenance and modification details.
  */
 
 if (!defined('ABSPATH')) {
@@ -23,7 +29,7 @@ if (!defined('ABSPATH')) {
 
 define('SIDRENA_CIJENA_DATE', '10.09.2026.');
 define('SIDRENA_CIJENA_META_KEY', '_anchor_price');
-define('SIDRENA_CIJENA_VERSION', '1.1.5');
+define('SIDRENA_CIJENA_VERSION', '1.2.0');
 define('SIDRENA_CIJENA_OPTION', 'sidrena_cijena_enabled');
 define('SIDRENA_CIJENA_AUTO_INITIALIZED_OPTION', 'sidrena_cijena_auto_initialized');
 define('SIDRENA_CIJENA_LABEL_OPTION', 'sidrena_cijena_label_text');
@@ -137,13 +143,13 @@ function sidrena_cijena_initialized_notice() {
     delete_transient($transient_key);
     printf(
         '<div class="notice notice-info is-dismissible"><p>%s</p></div>',
-        esc_html(sprintf(__('Sidrena cijena: aktualna cijena početno je spremljena za %d proizvoda ili varijacija. Postojeće vrijednosti nisu promijenjene.', 'sidrena-cijena-i-cjenik-aplitap'), (int) $initialized))
+        esc_html(sprintf(__('Sidrena cijena: aktualna cijena početno je spremljena za %d proizvoda ili varijacija. Postojeće vrijednosti nisu promijenjene.', 'sidrena-cijena'), (int) $initialized))
     );
 }
 
 function sidrena_cijena_font_family_choices() {
     return array(
-        'inherit'                              => __('Naslijeđeno od teme (preporučeno)', 'sidrena-cijena-i-cjenik-aplitap'),
+        'inherit'                              => __('Naslijeđeno od teme (preporučeno)', 'sidrena-cijena'),
         'Arial, Helvetica, sans-serif'          => 'Arial',
         'Georgia, serif'                        => 'Georgia',
         'Verdana, sans-serif'                   => 'Verdana',
@@ -154,15 +160,15 @@ function sidrena_cijena_font_family_choices() {
 
 function sidrena_cijena_font_weight_choices() {
     return array(
-        'normal' => __('Normalno', 'sidrena-cijena-i-cjenik-aplitap'),
-        'bold'   => __('Podebljano (bold)', 'sidrena-cijena-i-cjenik-aplitap'),
+        'normal' => __('Normalno', 'sidrena-cijena'),
+        'bold'   => __('Podebljano (bold)', 'sidrena-cijena'),
     );
 }
 
 function sidrena_cijena_font_style_choices() {
     return array(
-        'normal' => __('Normalno', 'sidrena-cijena-i-cjenik-aplitap'),
-        'italic' => __('Kurziv (italic)', 'sidrena-cijena-i-cjenik-aplitap'),
+        'normal' => __('Normalno', 'sidrena-cijena'),
+        'italic' => __('Kurziv (italic)', 'sidrena-cijena'),
     );
 }
 
@@ -174,7 +180,7 @@ function sidrena_cijena_check_woocommerce() {
 }
 
 function sidrena_cijena_missing_woocommerce_notice() {
-    echo '<div class="notice notice-error"><p>' . esc_html__('Dodatak "Sidrena Cijena" zahtijeva aktivan WooCommerce.', 'sidrena-cijena-i-cjenik-aplitap') . '</p></div>';
+    echo '<div class="notice notice-error"><p>' . esc_html__('Dodatak "Sidrena Cijena" zahtijeva aktivan WooCommerce.', 'sidrena-cijena') . '</p></div>';
 }
 
 // 1. Polje na stranici za uređivanje proizvoda (tab "General", odmah ispod redovne/akcijske cijene)
@@ -184,11 +190,11 @@ function sidrena_cijena_add_field() {
         'id'          => SIDRENA_CIJENA_META_KEY,
         'label'       => sprintf(
             /* translators: %s: reference date */
-            __('Sidrena cijena (%s)', 'sidrena-cijena-i-cjenik-aplitap'),
+            __('Sidrena cijena (%s)', 'sidrena-cijena'),
             SIDRENA_CIJENA_DATE
         ),
         'desc_tip'    => true,
-        'description' => __('Ako polje ostane prazno, dodatak će pri spremanju početno kopirati trenutačnu aktualnu cijenu. Vrijednost se nakon toga neće automatski mijenjati. Provjerite iznos prema vlastitoj evidenciji.', 'sidrena-cijena-i-cjenik-aplitap'),
+        'description' => __('Ako polje ostane prazno, dodatak će pri spremanju početno kopirati trenutačnu aktualnu cijenu. Vrijednost se nakon toga neće automatski mijenjati. Provjerite iznos prema vlastitoj evidenciji.', 'sidrena-cijena'),
         'data_type'   => 'price',
     ));
 }
@@ -223,7 +229,7 @@ function sidrena_cijena_quick_edit_field() {
     ?>
     <div class="inline-edit-group sidrena-cijena-quick-edit-row" style="clear:both;display:block;width:100%;float:none;">
         <label class="alignleft" style="width:100%;">
-            <span class="title"><?php echo esc_html__('Sidrena cijena', 'sidrena-cijena-i-cjenik-aplitap'); ?></span>
+            <span class="title"><?php echo esc_html__('Sidrena cijena', 'sidrena-cijena'); ?></span>
             <span class="input-text-wrap">
                 <input type="text" name="<?php echo esc_attr(SIDRENA_CIJENA_META_KEY); ?>" class="text sidrena_cijena_quick_edit_field" value="" />
             </span>
@@ -396,6 +402,43 @@ function sidrena_cijena_output_css() {
 }
 
 add_filter('woocommerce_get_price_html', 'sidrena_cijena_append_to_price_html', 10, 2);
+function sidrena_cijena_variable_anchor_range($product) {
+    $cache_key = 'anchor_range_' . $product->get_id();
+    $cached = wp_cache_get($cache_key, 'sidrena_cijena');
+    if (is_array($cached)) {
+        return $cached;
+    }
+
+    $prices = array();
+    foreach ($product->get_children() as $variation_id) {
+        $variation = wc_get_product($variation_id);
+        if (!$variation || $variation->get_status() !== 'publish') {
+            continue;
+        }
+        $value = $variation->get_meta(SIDRENA_CIJENA_META_KEY, true);
+        if ($value === '') {
+            $value = sidrena_cijena_get_current_price($variation);
+        }
+        if ($value !== '') {
+            $prices[] = (float) wc_format_decimal($value);
+        }
+    }
+
+    $range = $prices ? array(min($prices), max($prices)) : array();
+    wp_cache_set($cache_key, $range, 'sidrena_cijena', HOUR_IN_SECONDS);
+    return $range;
+}
+
+add_action('woocommerce_update_product', 'sidrena_cijena_clear_anchor_range_cache', 20, 1);
+add_action('woocommerce_update_product_variation', 'sidrena_cijena_clear_anchor_range_cache', 20, 1);
+function sidrena_cijena_clear_anchor_range_cache($product_id) {
+    wp_cache_delete('anchor_range_' . (int) $product_id, 'sidrena_cijena');
+    $product = function_exists('wc_get_product') ? wc_get_product($product_id) : null;
+    if ($product && $product->get_parent_id()) {
+        wp_cache_delete('anchor_range_' . $product->get_parent_id(), 'sidrena_cijena');
+    }
+}
+
 function sidrena_cijena_append_to_price_html($price_html, $product) {
     if (empty($price_html)) {
         return $price_html;
@@ -408,24 +451,10 @@ function sidrena_cijena_append_to_price_html($price_html, $product) {
     $anchor_price = $product->get_meta(SIDRENA_CIJENA_META_KEY, true);
 
     if (($anchor_price === '' || $anchor_price === null) && $product->is_type('variable')) {
-        $variation_prices = array();
-        foreach ($product->get_children() as $variation_id) {
-            $variation = wc_get_product($variation_id);
-            if (!$variation || $variation->get_status() !== 'publish') {
-                continue;
-            }
-            $value = get_post_meta($variation_id, SIDRENA_CIJENA_META_KEY, true);
-            if ($value === '') {
-                $value = sidrena_cijena_get_current_price($variation);
-            }
-            if ($value !== '') {
-                $variation_prices[] = (float) wc_format_decimal($value);
-            }
-        }
-
-        if ($variation_prices) {
-            $minimum = min($variation_prices);
-            $maximum = max($variation_prices);
+        $range = sidrena_cijena_variable_anchor_range($product);
+        if ($range) {
+            $minimum = $range[0];
+            $maximum = $range[1];
             $formatted = wc_price($minimum);
             if ($maximum > $minimum) {
                 $formatted .= ' &ndash; ' . wc_price($maximum);
@@ -454,7 +483,7 @@ function sidrena_cijena_variation_field($loop, $variation_data, $variation) {
             <?php
             printf(
                 /* translators: %s: reference date */
-                esc_html__('Sidrena cijena (%s)', 'sidrena-cijena-i-cjenik-aplitap'),
+                esc_html__('Sidrena cijena (%s)', 'sidrena-cijena'),
                 esc_html(SIDRENA_CIJENA_DATE)
             );
             ?>
@@ -464,7 +493,7 @@ function sidrena_cijena_variation_field($loop, $variation_data, $variation) {
             name="variable_anchor_price[<?php echo esc_attr($loop); ?>]"
             class="wc_input_price"
             value="<?php echo esc_attr($value); ?>"
-            placeholder="<?php echo esc_attr__('Prazno = kopiraj aktualnu cijenu', 'sidrena-cijena-i-cjenik-aplitap'); ?>"
+            placeholder="<?php echo esc_attr__('Prazno = kopiraj aktualnu cijenu', 'sidrena-cijena'); ?>"
         />
     </p>
     <?php
@@ -529,8 +558,8 @@ function sidrena_cijena_menu_icon() {
 add_action('admin_menu', 'sidrena_cijena_add_menu');
 function sidrena_cijena_add_menu() {
     $hook = add_menu_page(
-        __('Sidrena cijena', 'sidrena-cijena-i-cjenik-aplitap'),
-        __('Sidrena cijena', 'sidrena-cijena-i-cjenik-aplitap'),
+        __('Sidrena cijena', 'sidrena-cijena'),
+        __('Sidrena cijena', 'sidrena-cijena'),
         'manage_woocommerce',
         'sidrena-cijena',
         'sidrena_cijena_render_settings_page',
@@ -588,16 +617,16 @@ function sidrena_cijena_render_settings_page() {
     }
 
     $tabs = array(
-        'sidrena-cijena' => __('Sidrena cijena', 'sidrena-cijena-i-cjenik-aplitap'),
-        'cjenik'         => __('Cjenik', 'sidrena-cijena-i-cjenik-aplitap'),
-        'pomoc'           => __('Pomoć', 'sidrena-cijena-i-cjenik-aplitap'),
+        'sidrena-cijena' => __('Sidrena cijena', 'sidrena-cijena'),
+        'cjenik'         => __('Cjenik', 'sidrena-cijena'),
+        'pomoc'           => __('Pomoć', 'sidrena-cijena'),
     );
 
     $requested_tab = isset($_GET['tab']) && is_string($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
     $active_tab = array_key_exists($requested_tab, $tabs) ? $requested_tab : 'sidrena-cijena';
     ?>
     <div class="wrap">
-        <h1><?php echo esc_html__('Sidrena cijena i cjenik', 'sidrena-cijena-i-cjenik-aplitap'); ?></h1>
+        <h1><?php echo esc_html__('Sidrena cijena i cjenik', 'sidrena-cijena'); ?></h1>
         <nav class="nav-tab-wrapper" style="margin-bottom:20px;">
             <?php foreach ($tabs as $tab_slug => $tab_label) : ?>
                 <a href="<?php echo esc_url(admin_url('admin.php?page=sidrena-cijena&tab=' . $tab_slug)); ?>" class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; ?>">
@@ -624,12 +653,12 @@ function sidrena_cijena_render_tab_content() {
 
     if (isset($_POST['sidrena_cijena_fill_missing']) && check_admin_referer('sidrena_cijena_fill_missing_action', 'sidrena_cijena_fill_missing_nonce')) {
         if (empty($_POST['sidrena_cijena_fill_confirm'])) {
-            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__('Prije pokretanja označite potvrdu da ćete provjeriti predložene iznose.', 'sidrena-cijena-i-cjenik-aplitap') . '</p></div>';
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__('Prije pokretanja označite potvrdu da ćete provjeriti predložene iznose.', 'sidrena-cijena') . '</p></div>';
         } else {
             $filled = sidrena_cijena_fill_missing_from_current_prices();
             printf(
                 '<div class="notice notice-success is-dismissible"><p>%s</p></div>',
-                esc_html(sprintf(__('Popunjeno je %d praznih sidrenih cijena. Postojeće vrijednosti nisu promijenjene.', 'sidrena-cijena-i-cjenik-aplitap'), $filled))
+                esc_html(sprintf(__('Popunjeno je %d praznih sidrenih cijena. Postojeće vrijednosti nisu promijenjene.', 'sidrena-cijena'), $filled))
             );
         }
     }
@@ -684,7 +713,7 @@ function sidrena_cijena_render_tab_content() {
         }
         update_option(SIDRENA_CIJENA_COLOR_OPTION, $color);
 
-        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Postavke spremljene.', 'sidrena-cijena-i-cjenik-aplitap') . '</p></div>';
+        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Postavke spremljene.', 'sidrena-cijena') . '</p></div>';
     }
 
     $enabled = get_option(SIDRENA_CIJENA_OPTION, 'yes');
@@ -698,27 +727,27 @@ function sidrena_cijena_render_tab_content() {
     $color = $s['color'];
     $anchor_status = sidrena_cijena_get_anchor_status();
     ?>
-        <p><?php echo esc_html__('Upravljanje prikazom referentne maloprodajne cijene koja je vrijedila 10.09.2026. bez posebnog oblika prodaje.', 'sidrena-cijena-i-cjenik-aplitap'); ?></p>
+        <p><?php echo esc_html__('Upravljanje prikazom referentne maloprodajne cijene koja je vrijedila 10.09.2026. bez posebnog oblika prodaje.', 'sidrena-cijena'); ?></p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin:16px 0 20px;">
-            <div style="background:#fff;border:1px solid #dcdcde;padding:14px 18px;min-width:170px;"><strong style="font-size:22px;display:block;"><?php echo (int) $anchor_status['total']; ?></strong><?php echo esc_html__('proizvoda i varijacija', 'sidrena-cijena-i-cjenik-aplitap'); ?></div>
-            <div style="background:#fff;border:1px solid #dcdcde;padding:14px 18px;min-width:170px;"><strong style="font-size:22px;display:block;color:#008a20;"><?php echo (int) $anchor_status['set']; ?></strong><?php echo esc_html__('s unesenom cijenom', 'sidrena-cijena-i-cjenik-aplitap'); ?></div>
-            <div style="background:#fff;border:1px solid #dcdcde;padding:14px 18px;min-width:170px;"><strong style="font-size:22px;display:block;color:<?php echo $anchor_status['missing'] ? '#b32d2e' : '#008a20'; ?>;"><?php echo (int) $anchor_status['missing']; ?></strong><?php echo esc_html__('bez sidrene cijene', 'sidrena-cijena-i-cjenik-aplitap'); ?></div>
+            <div style="background:#fff;border:1px solid #dcdcde;padding:14px 18px;min-width:170px;"><strong style="font-size:22px;display:block;"><?php echo (int) $anchor_status['total']; ?></strong><?php echo esc_html__('proizvoda i varijacija', 'sidrena-cijena'); ?></div>
+            <div style="background:#fff;border:1px solid #dcdcde;padding:14px 18px;min-width:170px;"><strong style="font-size:22px;display:block;color:#008a20;"><?php echo (int) $anchor_status['set']; ?></strong><?php echo esc_html__('s unesenom cijenom', 'sidrena-cijena'); ?></div>
+            <div style="background:#fff;border:1px solid #dcdcde;padding:14px 18px;min-width:170px;"><strong style="font-size:22px;display:block;color:<?php echo $anchor_status['missing'] ? '#b32d2e' : '#008a20'; ?>;"><?php echo (int) $anchor_status['missing']; ?></strong><?php echo esc_html__('bez sidrene cijene', 'sidrena-cijena'); ?></div>
         </div>
         <form method="post" action="<?php echo esc_url($tab_url); ?>">
             <?php wp_nonce_field('sidrena_cijena_settings_save', 'sidrena_cijena_nonce'); ?>
             <table class="form-table" role="presentation">
                 <tr>
-                    <th scope="row"><?php echo esc_html__('Prikaz sidrene cijene', 'sidrena-cijena-i-cjenik-aplitap'); ?></th>
+                    <th scope="row"><?php echo esc_html__('Prikaz sidrene cijene', 'sidrena-cijena'); ?></th>
                     <td>
                         <label>
                             <input type="checkbox" name="<?php echo esc_attr(SIDRENA_CIJENA_OPTION); ?>" value="1" <?php checked($enabled, 'yes'); ?> />
-                            <?php echo esc_html__('Prikaži sidrenu cijenu uz trenutačnu cijenu na cijeloj web stranici', 'sidrena-cijena-i-cjenik-aplitap'); ?>
+                            <?php echo esc_html__('Prikaži sidrenu cijenu uz trenutačnu cijenu na cijeloj web stranici', 'sidrena-cijena'); ?>
                         </label>
                         <p class="description">
                             <?php
                             printf(
                                 /* translators: %s: reference date */
-                                esc_html__('Kad je uključeno, sidrena cijena (na dan %s) prikazuje se ispod redovne cijene svugdje gdje WooCommerce prikazuje cijenu proizvoda. Sam iznos unosite po proizvodu u Products → uredi proizvod → tab General.', 'sidrena-cijena-i-cjenik-aplitap'),
+                                esc_html__('Kad je uključeno, sidrena cijena (na dan %s) prikazuje se ispod redovne cijene svugdje gdje WooCommerce prikazuje cijenu proizvoda. Sam iznos unosite po proizvodu u Products → uredi proizvod → tab General.', 'sidrena-cijena'),
                                 esc_html(SIDRENA_CIJENA_DATE)
                             );
                             ?>
@@ -727,16 +756,16 @@ function sidrena_cijena_render_tab_content() {
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="sidrena-cijena-label"><?php echo esc_html__('Tekst oznake', 'sidrena-cijena-i-cjenik-aplitap'); ?></label>
+                        <label for="sidrena-cijena-label"><?php echo esc_html__('Tekst oznake', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
                         <input type="text" id="sidrena-cijena-label" name="<?php echo esc_attr(SIDRENA_CIJENA_LABEL_OPTION); ?>" value="<?php echo esc_attr($label); ?>" class="regular-text" />
-                        <p class="description"><?php echo esc_html__('Tekst koji se prikazuje ispred iznosa sidrene cijene na web stranici. Ostavite prazno za vraćanje na zadani tekst.', 'sidrena-cijena-i-cjenik-aplitap'); ?></p>
+                        <p class="description"><?php echo esc_html__('Tekst koji se prikazuje ispred iznosa sidrene cijene na web stranici. Ostavite prazno za vraćanje na zadani tekst.', 'sidrena-cijena'); ?></p>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="sidrena-cijena-font-family"><?php echo esc_html__('Vrsta fonta', 'sidrena-cijena-i-cjenik-aplitap'); ?></label>
+                        <label for="sidrena-cijena-font-family"><?php echo esc_html__('Vrsta fonta', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
                         <select id="sidrena-cijena-font-family" name="<?php echo esc_attr(SIDRENA_CIJENA_FONT_FAMILY_OPTION); ?>">
@@ -748,7 +777,7 @@ function sidrena_cijena_render_tab_content() {
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="sidrena-cijena-font-weight"><?php echo esc_html__('Debljina fonta', 'sidrena-cijena-i-cjenik-aplitap'); ?></label>
+                        <label for="sidrena-cijena-font-weight"><?php echo esc_html__('Debljina fonta', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
                         <select id="sidrena-cijena-font-weight" name="<?php echo esc_attr(SIDRENA_CIJENA_FONT_WEIGHT_OPTION); ?>">
@@ -760,7 +789,7 @@ function sidrena_cijena_render_tab_content() {
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="sidrena-cijena-font-style"><?php echo esc_html__('Stil fonta', 'sidrena-cijena-i-cjenik-aplitap'); ?></label>
+                        <label for="sidrena-cijena-font-style"><?php echo esc_html__('Stil fonta', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
                         <select id="sidrena-cijena-font-style" name="<?php echo esc_attr(SIDRENA_CIJENA_FONT_STYLE_OPTION); ?>">
@@ -772,16 +801,16 @@ function sidrena_cijena_render_tab_content() {
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="sidrena-cijena-font-size"><?php echo esc_html__('Veličina fonta', 'sidrena-cijena-i-cjenik-aplitap'); ?></label>
+                        <label for="sidrena-cijena-font-size"><?php echo esc_html__('Veličina fonta', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
                         <input type="number" id="sidrena-cijena-font-size" name="<?php echo esc_attr(SIDRENA_CIJENA_FONT_SIZE_OPTION); ?>" value="<?php echo esc_attr($font_size); ?>" min="8" max="32" step="1" class="small-text" /> px
-                        <p class="description"><?php echo esc_html__('Veličina fonta teksta sidrene cijene na desktop ekranima, u pikselima (8-32).', 'sidrena-cijena-i-cjenik-aplitap'); ?></p>
+                        <p class="description"><?php echo esc_html__('Veličina fonta teksta sidrene cijene na desktop ekranima, u pikselima (8-32).', 'sidrena-cijena'); ?></p>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="sidrena-cijena-font-size-mobile"><?php echo esc_html__('Veličina fonta (mobitel)', 'sidrena-cijena-i-cjenik-aplitap'); ?></label>
+                        <label for="sidrena-cijena-font-size-mobile"><?php echo esc_html__('Veličina fonta (mobitel)', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
                         <input type="number" id="sidrena-cijena-font-size-mobile" name="<?php echo esc_attr(SIDRENA_CIJENA_FONT_SIZE_MOBILE_OPTION); ?>" value="<?php echo esc_attr($font_size_mobile); ?>" min="8" max="32" step="1" class="small-text" /> px
@@ -789,7 +818,7 @@ function sidrena_cijena_render_tab_content() {
                             <?php
                             printf(
                                 /* translators: %d: breakpoint in pixels */
-                                esc_html__('Veličina fonta na ekranima širine do %d px (mobiteli i manji tableti). Iznad te širine koristi se desktop veličina.', 'sidrena-cijena-i-cjenik-aplitap'),
+                                esc_html__('Veličina fonta na ekranima širine do %d px (mobiteli i manji tableti). Iznad te širine koristi se desktop veličina.', 'sidrena-cijena'),
                                 (int) SIDRENA_CIJENA_MOBILE_BREAKPOINT
                             );
                             ?>
@@ -798,21 +827,21 @@ function sidrena_cijena_render_tab_content() {
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="sidrena-cijena-color"><?php echo esc_html__('Boja teksta', 'sidrena-cijena-i-cjenik-aplitap'); ?></label>
+                        <label for="sidrena-cijena-color"><?php echo esc_html__('Boja teksta', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
                         <input type="text" id="sidrena-cijena-color" class="sidrena-cijena-color-field" name="<?php echo esc_attr(SIDRENA_CIJENA_COLOR_OPTION); ?>" value="<?php echo esc_attr($color); ?>" data-default-color="<?php echo esc_attr(SIDRENA_CIJENA_DEFAULT_COLOR); ?>" />
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><?php echo esc_html__('Pregled', 'sidrena-cijena-i-cjenik-aplitap'); ?></th>
+                    <th scope="row"><?php echo esc_html__('Pregled', 'sidrena-cijena'); ?></th>
                     <td>
-                        <p class="description" style="margin-top:0;"><?php echo esc_html__('Desktop', 'sidrena-cijena-i-cjenik-aplitap'); ?></p>
+                        <p class="description" style="margin-top:0;"><?php echo esc_html__('Desktop', 'sidrena-cijena'); ?></p>
                         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;max-width:400px;margin-bottom:12px;">
                             <div style="font-size:16px;color:#333;">189,00 €</div>
                             <span id="sidrena-cijena-preview"></span>
                         </div>
-                        <p class="description"><?php echo esc_html__('Mobitel', 'sidrena-cijena-i-cjenik-aplitap'); ?></p>
+                        <p class="description"><?php echo esc_html__('Mobitel', 'sidrena-cijena'); ?></p>
                         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;max-width:250px;">
                             <div style="font-size:16px;color:#333;">189,00 €</div>
                             <span id="sidrena-cijena-preview-mobile"></span>
@@ -820,22 +849,22 @@ function sidrena_cijena_render_tab_content() {
                     </td>
                 </tr>
             </table>
-            <?php submit_button(__('Spremi promjene', 'sidrena-cijena-i-cjenik-aplitap'), 'primary', 'sidrena_cijena_save'); ?>
+            <?php submit_button(__('Spremi promjene', 'sidrena-cijena'), 'primary', 'sidrena_cijena_save'); ?>
         </form>
 
         <hr />
-        <h2><?php echo esc_html__('Brzo početno popunjavanje', 'sidrena-cijena-i-cjenik-aplitap'); ?></h2>
-        <p><?php echo esc_html__('Dodatak automatski kopira aktualnu WooCommerce cijenu u prazno polje sidrene cijene. Ovaj alat može ponovno obraditi sve objavljene proizvode; postojeće sidrene cijene nikada ne prepisuje.', 'sidrena-cijena-i-cjenik-aplitap'); ?></p>
+        <h2><?php echo esc_html__('Brzo početno popunjavanje', 'sidrena-cijena'); ?></h2>
+        <p><?php echo esc_html__('Dodatak automatski kopira aktualnu WooCommerce cijenu u prazno polje sidrene cijene. Ovaj alat može ponovno obraditi sve objavljene proizvode; postojeće sidrene cijene nikada ne prepisuje.', 'sidrena-cijena'); ?></p>
         <div class="notice notice-warning inline" style="margin:12px 0;padding:10px 12px;max-width:900px;">
-            <p style="margin:0;"><?php echo esc_html__('Važno: automatski kopirana aktualna cijena nije nužno cijena koja je vrijedila 10.09.2026. Predložene iznose provjerite prema vlastitoj evidenciji, osobito za proizvode na akciji.', 'sidrena-cijena-i-cjenik-aplitap'); ?></p>
+            <p style="margin:0;"><?php echo esc_html__('Važno: automatski kopirana aktualna cijena nije nužno cijena koja je vrijedila 10.09.2026. Predložene iznose provjerite prema vlastitoj evidenciji, osobito za proizvode na akciji.', 'sidrena-cijena'); ?></p>
         </div>
         <form method="post" action="<?php echo esc_url($tab_url); ?>">
             <?php wp_nonce_field('sidrena_cijena_fill_missing_action', 'sidrena_cijena_fill_missing_nonce'); ?>
             <label style="display:block;margin:12px 0;">
                 <input type="checkbox" name="sidrena_cijena_fill_confirm" value="1" />
-                <?php echo esc_html__('Razumijem da moram provjeriti iznose prema evidenciji cijena.', 'sidrena-cijena-i-cjenik-aplitap'); ?>
+                <?php echo esc_html__('Razumijem da moram provjeriti iznose prema evidenciji cijena.', 'sidrena-cijena'); ?>
             </label>
-            <?php submit_button(__('Popuni prazna polja aktualnim cijenama', 'sidrena-cijena-i-cjenik-aplitap'), 'secondary', 'sidrena_cijena_fill_missing'); ?>
+            <?php submit_button(__('Popuni prazna polja aktualnim cijenama', 'sidrena-cijena'), 'secondary', 'sidrena_cijena_fill_missing'); ?>
         </form>
     <?php
 }
@@ -843,6 +872,32 @@ function sidrena_cijena_render_tab_content() {
 /**
  * Counts published products and their variations that need an anchor price.
  */
+function sidrena_cijena_published_product_ids() {
+    if (!function_exists('wc_get_products')) {
+        return;
+    }
+
+    $page = 1;
+    $page_size = 100;
+    do {
+        $ids = wc_get_products(array(
+            'status' => 'publish',
+            'limit' => $page_size,
+            'page' => $page,
+            'orderby' => 'ID',
+            'order' => 'ASC',
+            'return' => 'ids',
+        ));
+        if (is_wp_error($ids) || !is_array($ids)) {
+            return;
+        }
+        foreach ($ids as $id) {
+            yield $id;
+        }
+        $page++;
+    } while (count($ids) === $page_size);
+}
+
 function sidrena_cijena_get_anchor_status() {
     $status = array('total' => 0, 'set' => 0, 'missing' => 0);
 
@@ -850,8 +905,7 @@ function sidrena_cijena_get_anchor_status() {
         return $status;
     }
 
-    $ids = wc_get_products(array('status' => 'publish', 'limit' => -1, 'return' => 'ids'));
-    foreach ($ids as $id) {
+    foreach (sidrena_cijena_published_product_ids() as $id) {
         $product = wc_get_product($id);
         if (!$product) {
             continue;
@@ -884,9 +938,7 @@ function sidrena_cijena_fill_missing_from_current_prices() {
     }
 
     $filled = 0;
-    $ids = wc_get_products(array('status' => 'publish', 'limit' => -1, 'return' => 'ids'));
-
-    foreach ($ids as $id) {
+    foreach (sidrena_cijena_published_product_ids() as $id) {
         $product = wc_get_product($id);
         if (!$product) {
             continue;
@@ -942,104 +994,104 @@ function sidrena_cijena_render_help_tab() {
     </style>
 
     <p style="font-size:14px;max-width:1000px;">
-        <?php echo esc_html__('Ovdje su objedinjene upute za postavljanje, svakodnevni rad i provjeru dodatka. Dodatak tehnički pomaže pri prikazu sidrene cijene i objavi strojno čitljivog cjenika; vlasnik trgovine odgovoran je za točnost podataka.', 'sidrena-cijena-i-cjenik-aplitap'); ?>
+        <?php echo esc_html__('Ovdje su objedinjene upute za postavljanje, svakodnevni rad i provjeru dodatka. Dodatak tehnički pomaže pri prikazu sidrene cijene i objavi strojno čitljivog cjenika; vlasnik trgovine odgovoran je za točnost podataka.', 'sidrena-cijena'); ?>
     </p>
 
     <div class="sidrena-help-grid">
         <section class="sidrena-help-card">
-            <h2><?php echo esc_html__('Brzi početak', 'sidrena-cijena-i-cjenik-aplitap'); ?></h2>
+            <h2><?php echo esc_html__('Brzi početak', 'sidrena-cijena'); ?></h2>
             <ol>
-                <li><?php echo wp_kses_post(sprintf(__('Otvorite <a href="%s">Sidrena cijena</a> i provjerite prikaz i početno spremljene iznose.', 'sidrena-cijena-i-cjenik-aplitap'), esc_url(admin_url('admin.php?page=sidrena-cijena&tab=sidrena-cijena')))); ?></li>
-                <li><?php echo wp_kses_post(sprintf(__('Otvorite <a href="%s">Cjenik</a> i unesite vrstu objekta, oznaku objekta i broj skladišta.', 'sidrena-cijena-i-cjenik-aplitap'), esc_url(admin_url('admin.php?page=sidrena-cijena&tab=cjenik')))); ?></li>
-                <li><?php echo esc_html__('Provjerite adresu trgovine u WooCommerce → Postavke → Općenito.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Kliknite „Generiraj cjenik sada” i otvorite CSV i XML poveznice u anonimnom prozoru.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Na javnu stranicu dodajte shortcode za željeni format.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
+                <li><?php echo wp_kses_post(sprintf(__('Otvorite <a href="%s">Sidrena cijena</a> i provjerite prikaz i početno spremljene iznose.', 'sidrena-cijena'), esc_url(admin_url('admin.php?page=sidrena-cijena&tab=sidrena-cijena')))); ?></li>
+                <li><?php echo wp_kses_post(sprintf(__('Otvorite <a href="%s">Cjenik</a> i unesite vrstu objekta, oznaku objekta i broj skladišta.', 'sidrena-cijena'), esc_url(admin_url('admin.php?page=sidrena-cijena&tab=cjenik')))); ?></li>
+                <li><?php echo esc_html__('Provjerite adresu trgovine u WooCommerce → Postavke → Općenito.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Kliknite „Generiraj cjenik sada” i otvorite CSV i XML poveznice u anonimnom prozoru.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Na javnu stranicu dodajte shortcode za željeni format.', 'sidrena-cijena'); ?></li>
             </ol>
         </section>
 
         <section class="sidrena-help-card">
-            <h2><?php echo esc_html__('Sidrena cijena', 'sidrena-cijena-i-cjenik-aplitap'); ?></h2>
+            <h2><?php echo esc_html__('Sidrena cijena', 'sidrena-cijena'); ?></h2>
             <ul>
-                <li><?php echo esc_html__('Polje postoji na jednostavnim proizvodima i na svakoj varijaciji.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Ako je prazno, pri prvom spremanju kopira se tadašnja aktualna WooCommerce cijena.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Nakon početnog spremanja sidrena cijena se ne mijenja zajedno s aktualnom cijenom.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Ručno unesene vrijednosti dodatak nikada automatski ne prepisuje.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Za varijabilni proizvod kupcu se prikazuje vrijednost odabrane varijacije, odnosno raspon prije odabira.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Izgled teksta, boja i veličina za desktop i mobitel podešavaju se u tabu Sidrena cijena.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
+                <li><?php echo esc_html__('Polje postoji na jednostavnim proizvodima i na svakoj varijaciji.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Ako je prazno, pri prvom spremanju kopira se tadašnja aktualna WooCommerce cijena.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Nakon početnog spremanja sidrena cijena se ne mijenja zajedno s aktualnom cijenom.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Ručno unesene vrijednosti dodatak nikada automatski ne prepisuje.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Za varijabilni proizvod kupcu se prikazuje vrijednost odabrane varijacije, odnosno raspon prije odabira.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Izgled teksta, boja i veličina za desktop i mobitel podešavaju se u tabu Sidrena cijena.', 'sidrena-cijena'); ?></li>
             </ul>
-            <p><strong><?php echo esc_html__('Napomena:', 'sidrena-cijena-i-cjenik-aplitap'); ?></strong> <?php echo esc_html__('automatski kopiranu aktualnu cijenu treba provjeriti prema evidenciji, osobito ako je proizvod bio ili jest na akciji.', 'sidrena-cijena-i-cjenik-aplitap'); ?></p>
+            <p><strong><?php echo esc_html__('Napomena:', 'sidrena-cijena'); ?></strong> <?php echo esc_html__('automatski kopiranu aktualnu cijenu treba provjeriti prema evidenciji, osobito ako je proizvod bio ili jest na akciji.', 'sidrena-cijena'); ?></p>
         </section>
 
         <section class="sidrena-help-card">
-            <h2><?php echo esc_html__('Podaci u cjeniku', 'sidrena-cijena-i-cjenik-aplitap'); ?></h2>
-            <p><?php echo esc_html__('Svaki red CSV-a i svaki XML proizvod sadrži:', 'sidrena-cijena-i-cjenik-aplitap'); ?></p>
-            <p><?php echo esc_html__('naziv, šifru proizvoda, brend, jedinicu mjere, cijenu po jedinici, maloprodajnu cijenu, oznaku i naziv posebnog oblika prodaje, sidrenu cijenu, barkod i dostupnost.', 'sidrena-cijena-i-cjenik-aplitap'); ?></p>
+            <h2><?php echo esc_html__('Podaci u cjeniku', 'sidrena-cijena'); ?></h2>
+            <p><?php echo esc_html__('Svaki red CSV-a i svaki XML proizvod sadrži:', 'sidrena-cijena'); ?></p>
+            <p><?php echo esc_html__('naziv, šifru proizvoda, brend, jedinicu mjere, cijenu po jedinici, maloprodajnu cijenu, oznaku i naziv posebnog oblika prodaje, sidrenu cijenu, barkod i dostupnost.', 'sidrena-cijena'); ?></p>
             <ul>
-                <li><?php echo esc_html__('Barkod, jedinica mjere i uključivanje u cjenik uređuju se u podacima proizvoda, uz SKU.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Brend se preuzima iz WooCommerce Brands ili podržanih dodataka za brendove.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Skriveni proizvodi automatski se izostavljaju, osim ako ih ručno uključite.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Varijacije se izvoze kao zasebne stavke.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
+                <li><?php echo esc_html__('Barkod, jedinica mjere i uključivanje u cjenik uređuju se u podacima proizvoda, uz SKU.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Brend se preuzima iz WooCommerce Brands ili podržanih dodataka za brendove.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Skriveni proizvodi automatski se izostavljaju, osim ako ih ručno uključite.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Varijacije se izvoze kao zasebne stavke.', 'sidrena-cijena'); ?></li>
             </ul>
         </section>
 
         <section class="sidrena-help-card">
-            <h2><?php echo esc_html__('Javne adrese i shortcodeovi', 'sidrena-cijena-i-cjenik-aplitap'); ?></h2>
+            <h2><?php echo esc_html__('Javne adrese i shortcodeovi', 'sidrena-cijena'); ?></h2>
             <p><strong>CSV:</strong><br><a href="<?php echo esc_url($csv_url); ?>"><code><?php echo esc_html($csv_url); ?></code></a></p>
             <p><strong>XML:</strong><br><a href="<?php echo esc_url($xml_url); ?>"><code><?php echo esc_html($xml_url); ?></code></a></p>
             <table class="widefat striped">
                 <tbody>
-                    <tr><td><code>[sidrena_cjenik]</code></td><td><?php echo esc_html__('CSV gumb', 'sidrena-cijena-i-cjenik-aplitap'); ?></td></tr>
-                    <tr><td><code>[sidrena_cjenik format="xml"]</code></td><td><?php echo esc_html__('XML gumb', 'sidrena-cijena-i-cjenik-aplitap'); ?></td></tr>
-                    <tr><td><code>[sidrena_cjenik format="oba"]</code></td><td><?php echo esc_html__('CSV i XML gumbi', 'sidrena-cijena-i-cjenik-aplitap'); ?></td></tr>
-                    <tr><td><code>[sidrena_cjenik format="oba" arhiva="da"]</code></td><td><?php echo esc_html__('Oba formata i arhive', 'sidrena-cijena-i-cjenik-aplitap'); ?></td></tr>
-                    <tr><td><code>[sidrena_cjenik tekst="Preuzmi cjenik"]</code></td><td><?php echo esc_html__('Vlastiti tekst jednog gumba', 'sidrena-cijena-i-cjenik-aplitap'); ?></td></tr>
+                    <tr><td><code>[sidrena_cjenik]</code></td><td><?php echo esc_html__('CSV gumb', 'sidrena-cijena'); ?></td></tr>
+                    <tr><td><code>[sidrena_cjenik format="xml"]</code></td><td><?php echo esc_html__('XML gumb', 'sidrena-cijena'); ?></td></tr>
+                    <tr><td><code>[sidrena_cjenik format="oba"]</code></td><td><?php echo esc_html__('CSV i XML gumbi', 'sidrena-cijena'); ?></td></tr>
+                    <tr><td><code>[sidrena_cjenik format="oba" arhiva="da"]</code></td><td><?php echo esc_html__('Oba formata i arhive', 'sidrena-cijena'); ?></td></tr>
+                    <tr><td><code>[sidrena_cjenik tekst="Preuzmi cjenik"]</code></td><td><?php echo esc_html__('Vlastiti tekst jednog gumba', 'sidrena-cijena'); ?></td></tr>
                 </tbody>
             </table>
         </section>
 
         <section class="sidrena-help-card">
-            <h2><?php echo esc_html__('Automatsko generiranje', 'sidrena-cijena-i-cjenik-aplitap'); ?></h2>
+            <h2><?php echo esc_html__('Automatsko generiranje', 'sidrena-cijena'); ?></h2>
             <ul>
-                <li><?php echo esc_html__('Cjenik se generira svakodnevno u odabrano vrijeme prije 8:00.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Promjena proizvoda, cijene ili zalihe stavlja osvježavanje u red bez usporavanja spremanja proizvoda.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Prvi javni zahtjev nakon promjene po potrebi izrađuje svježu datoteku.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><?php echo esc_html__('Arhivske datoteke čuvaju se najmanje 30 dana.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
+                <li><?php echo esc_html__('Cjenik se generira svakodnevno u odabrano vrijeme prije 8:00.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Promjena proizvoda, cijene ili zalihe stavlja osvježavanje u red bez usporavanja spremanja proizvoda.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Javni zahtjev uvijek preuzima zadnju dovršenu datoteku; osvježavanje se obavlja u pozadini.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Arhivske datoteke čuvaju se najmanje 30 dana.', 'sidrena-cijena'); ?></li>
             </ul>
-            <p><strong><?php echo esc_html__('Važno:', 'sidrena-cijena-i-cjenik-aplitap'); ?></strong> <?php echo esc_html__('WP-Cron ovisi o posjetima stranici. Za zajamčeno izvršavanje prije 8:00 postavite poslužiteljski cron koji redovito poziva wp-cron.php.', 'sidrena-cijena-i-cjenik-aplitap'); ?></p>
+            <p><strong><?php echo esc_html__('Važno:', 'sidrena-cijena'); ?></strong> <?php echo esc_html__('WP-Cron ovisi o posjetima stranici. Za zajamčeno izvršavanje prije 8:00 postavite poslužiteljski cron koji redovito poziva wp-cron.php.', 'sidrena-cijena'); ?></p>
         </section>
 
         <section class="sidrena-help-card">
-            <h2><?php echo esc_html__('Dijagnostika ove instalacije', 'sidrena-cijena-i-cjenik-aplitap'); ?></h2>
+            <h2><?php echo esc_html__('Dijagnostika ove instalacije', 'sidrena-cijena'); ?></h2>
             <table class="widefat striped">
                 <tbody>
-                    <tr><td><?php echo esc_html__('Verzija dodatka', 'sidrena-cijena-i-cjenik-aplitap'); ?></td><td><strong><?php echo esc_html(SIDRENA_CIJENA_VERSION); ?></strong></td></tr>
-                    <tr><td><?php echo esc_html__('Prikaz sidrene cijene', 'sidrena-cijena-i-cjenik-aplitap'); ?></td><td class="<?php echo $display_enabled ? 'sidrena-help-ok' : 'sidrena-help-warning'; ?>"><?php echo $display_enabled ? esc_html__('Uključen', 'sidrena-cijena-i-cjenik-aplitap') : esc_html__('Isključen', 'sidrena-cijena-i-cjenik-aplitap'); ?></td></tr>
-                    <tr><td><?php echo esc_html__('Automatski cjenik', 'sidrena-cijena-i-cjenik-aplitap'); ?></td><td class="<?php echo $automatic_enabled ? 'sidrena-help-ok' : 'sidrena-help-warning'; ?>"><?php echo $automatic_enabled ? esc_html__('Uključen', 'sidrena-cijena-i-cjenik-aplitap') : esc_html__('Isključen', 'sidrena-cijena-i-cjenik-aplitap'); ?></td></tr>
-                    <tr><td><?php echo esc_html__('Formati', 'sidrena-cijena-i-cjenik-aplitap'); ?></td><td><?php echo esc_html(implode(', ', array_filter(array($csv_enabled ? 'CSV' : '', $xml_enabled ? 'XML' : '')))); ?></td></tr>
-                    <tr><td><?php echo esc_html__('Zadnje generiranje', 'sidrena-cijena-i-cjenik-aplitap'); ?></td><td><?php echo $last_generated ? esc_html(wp_date('d.m.Y. H:i', $last_generated)) : '<span class="sidrena-help-warning">' . esc_html__('Nije još generiran', 'sidrena-cijena-i-cjenik-aplitap') . '</span>'; ?></td></tr>
-                    <tr><td><?php echo esc_html__('Sljedeće planirano', 'sidrena-cijena-i-cjenik-aplitap'); ?></td><td><?php echo $next_scheduled ? esc_html(wp_date('d.m.Y. H:i', $next_scheduled)) : '<span class="sidrena-help-warning">' . esc_html__('Nije zakazano', 'sidrena-cijena-i-cjenik-aplitap') . '</span>'; ?></td></tr>
-                    <tr><td><?php echo esc_html__('Zadnja pogreška', 'sidrena-cijena-i-cjenik-aplitap'); ?></td><td><?php echo $last_error ? '<span class="sidrena-help-warning">' . esc_html($last_error) . '</span>' : '<span class="sidrena-help-ok">' . esc_html__('Nema zabilježene pogreške', 'sidrena-cijena-i-cjenik-aplitap') . '</span>'; ?></td></tr>
+                    <tr><td><?php echo esc_html__('Verzija dodatka', 'sidrena-cijena'); ?></td><td><strong><?php echo esc_html(SIDRENA_CIJENA_VERSION); ?></strong></td></tr>
+                    <tr><td><?php echo esc_html__('Prikaz sidrene cijene', 'sidrena-cijena'); ?></td><td class="<?php echo $display_enabled ? 'sidrena-help-ok' : 'sidrena-help-warning'; ?>"><?php echo $display_enabled ? esc_html__('Uključen', 'sidrena-cijena') : esc_html__('Isključen', 'sidrena-cijena'); ?></td></tr>
+                    <tr><td><?php echo esc_html__('Automatski cjenik', 'sidrena-cijena'); ?></td><td class="<?php echo $automatic_enabled ? 'sidrena-help-ok' : 'sidrena-help-warning'; ?>"><?php echo $automatic_enabled ? esc_html__('Uključen', 'sidrena-cijena') : esc_html__('Isključen', 'sidrena-cijena'); ?></td></tr>
+                    <tr><td><?php echo esc_html__('Formati', 'sidrena-cijena'); ?></td><td><?php echo esc_html(implode(', ', array_filter(array($csv_enabled ? 'CSV' : '', $xml_enabled ? 'XML' : '')))); ?></td></tr>
+                    <tr><td><?php echo esc_html__('Zadnje generiranje', 'sidrena-cijena'); ?></td><td><?php echo $last_generated ? esc_html(wp_date('d.m.Y. H:i', $last_generated)) : '<span class="sidrena-help-warning">' . esc_html__('Nije još generiran', 'sidrena-cijena') . '</span>'; ?></td></tr>
+                    <tr><td><?php echo esc_html__('Sljedeće planirano', 'sidrena-cijena'); ?></td><td><?php echo $next_scheduled ? esc_html(wp_date('d.m.Y. H:i', $next_scheduled)) : '<span class="sidrena-help-warning">' . esc_html__('Nije zakazano', 'sidrena-cijena') . '</span>'; ?></td></tr>
+                    <tr><td><?php echo esc_html__('Zadnja pogreška', 'sidrena-cijena'); ?></td><td><?php echo $last_error ? '<span class="sidrena-help-warning">' . esc_html($last_error) . '</span>' : '<span class="sidrena-help-ok">' . esc_html__('Nema zabilježene pogreške', 'sidrena-cijena') . '</span>'; ?></td></tr>
                 </tbody>
             </table>
         </section>
 
         <section class="sidrena-help-card">
-            <h2><?php echo esc_html__('Ako nešto ne radi', 'sidrena-cijena-i-cjenik-aplitap'); ?></h2>
+            <h2><?php echo esc_html__('Ako nešto ne radi', 'sidrena-cijena'); ?></h2>
             <ul>
-                <li><strong><?php echo esc_html__('CSV/XML vraća 404:', 'sidrena-cijena-i-cjenik-aplitap'); ?></strong> <?php echo esc_html__('generirajte cjenik ručno. Ako se problem nastavi, otvorite Postavke → Stalne veze i kliknite Spremi promjene, zatim očistite cache.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><strong><?php echo esc_html__('XML poveznica se ne prikazuje:', 'sidrena-cijena-i-cjenik-aplitap'); ?></strong> <?php echo esc_html__('uključite Generiraj XML, spremite postavke i ponovno generirajte cjenik.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><strong><?php echo esc_html__('Cjenik kasni:', 'sidrena-cijena-i-cjenik-aplitap'); ?></strong> <?php echo esc_html__('provjerite WP-Cron ili postavite pravi poslužiteljski cron.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><strong><?php echo esc_html__('Nedostaju podaci:', 'sidrena-cijena-i-cjenik-aplitap'); ?></strong> <?php echo esc_html__('u tabu Cjenik pogledajte Provjeru spremnosti i popunite označena polja.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
-                <li><strong><?php echo esc_html__('Promjena se ne vidi:', 'sidrena-cijena-i-cjenik-aplitap'); ?></strong> <?php echo esc_html__('očistite cache WordPress dodatka, poslužitelja i CDN-a te ponovno otvorite javnu adresu.', 'sidrena-cijena-i-cjenik-aplitap'); ?></li>
+                <li><strong><?php echo esc_html__('CSV/XML vraća 404:', 'sidrena-cijena'); ?></strong> <?php echo esc_html__('generirajte cjenik ručno. Ako se problem nastavi, otvorite Postavke → Stalne veze i kliknite Spremi promjene, zatim očistite cache.', 'sidrena-cijena'); ?></li>
+                <li><strong><?php echo esc_html__('XML poveznica se ne prikazuje:', 'sidrena-cijena'); ?></strong> <?php echo esc_html__('uključite Generiraj XML, spremite postavke i ponovno generirajte cjenik.', 'sidrena-cijena'); ?></li>
+                <li><strong><?php echo esc_html__('Cjenik kasni:', 'sidrena-cijena'); ?></strong> <?php echo esc_html__('provjerite WP-Cron ili postavite pravi poslužiteljski cron.', 'sidrena-cijena'); ?></li>
+                <li><strong><?php echo esc_html__('Nedostaju podaci:', 'sidrena-cijena'); ?></strong> <?php echo esc_html__('u tabu Cjenik pogledajte Provjeru spremnosti i popunite označena polja.', 'sidrena-cijena'); ?></li>
+                <li><strong><?php echo esc_html__('Promjena se ne vidi:', 'sidrena-cijena'); ?></strong> <?php echo esc_html__('očistite cache WordPress dodatka, poslužitelja i CDN-a te ponovno otvorite javnu adresu.', 'sidrena-cijena'); ?></li>
             </ul>
         </section>
 
         <section class="sidrena-help-card">
-            <h2><?php echo esc_html__('Propisi i kontakt', 'sidrena-cijena-i-cjenik-aplitap'); ?></h2>
-            <p><a href="https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1212.html" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('NN 101/2026, broj 1212 — sidrena cijena', 'sidrena-cijena-i-cjenik-aplitap'); ?></a></p>
-            <p><a href="https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('NN 101/2026, broj 1213 — objava cjenika', 'sidrena-cijena-i-cjenik-aplitap'); ?></a></p>
-            <p><?php echo esc_html__('Dodatak je tehnička pomoć, a ne pravni savjet ili jamstvo usklađenosti.', 'sidrena-cijena-i-cjenik-aplitap'); ?></p>
-            <p><strong><?php echo esc_html__('Autor:', 'sidrena-cijena-i-cjenik-aplitap'); ?></strong> Matija Gračanin<br><a href="mailto:matijag@gmail.com">matijag@gmail.com</a></p>
+            <h2><?php echo esc_html__('Propisi i kontakt', 'sidrena-cijena'); ?></h2>
+            <p><a href="https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1212.html" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('NN 101/2026, broj 1212 — sidrena cijena', 'sidrena-cijena'); ?></a></p>
+            <p><a href="https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('NN 101/2026, broj 1213 — objava cjenika', 'sidrena-cijena'); ?></a></p>
+            <p><?php echo esc_html__('Dodatak je tehnička pomoć, a ne pravni savjet ili jamstvo usklađenosti.', 'sidrena-cijena'); ?></p>
+            <p><strong><?php echo esc_html__('Autor:', 'sidrena-cijena'); ?></strong> Matija Gračanin<br><a href="mailto:matijag@gmail.com">matijag@gmail.com</a></p>
         </section>
     </div>
     <?php
