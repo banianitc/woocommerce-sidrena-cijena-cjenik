@@ -1,21 +1,30 @@
 # Sidrena Cijena i Cjenik za WooCommerce
 
-Besplatan WordPress dodatak za prikaz sidrene cijene te objavu javnog, strojno čitljivog CSV/XML cjenika u WooCommerce trgovini.
+[![Quality checks](https://github.com/mgracanin/woocommerce-sidrena-cijena-cjenik/actions/workflows/quality.yml/badge.svg)](https://github.com/mgracanin/woocommerce-sidrena-cijena-cjenik/actions/workflows/quality.yml)
+[![Latest release](https://img.shields.io/github/v/release/mgracanin/woocommerce-sidrena-cijena-cjenik)](https://github.com/mgracanin/woocommerce-sidrena-cijena-cjenik/releases/latest)
+[![License: GPL v2 or later](https://img.shields.io/badge/License-GPL_v2_or_later-blue.svg)](LICENSE)
 
-Dodatak je izrađen kao tehnička pomoć hrvatskim trgovcima u provedbi odluka objavljenih u Narodnim novinama 101/2026. Nije pravni savjet; prije produkcijske uporabe provjerite postavke, podatke i važeće obveze za svoju trgovinu.
+Besplatan WordPress dodatak za prikaz sidrene cijene te objavu strojno čitljivog CSV/XML cjenika u WooCommerce trgovini.
+
+Dodatak je napravljen kao tehnička pomoć vlasnicima internetskih trgovina koje koriste WooCommerce pri provedbi odluka objavljenih u Narodnim novinama 101/2026.
+
+> [!IMPORTANT]
+> Prije produkcijske uporabe provjerite postavke, podatke i obveze koje se primjenjuju na vašu trgovinu, po potrebi s računovođom i/ili pravnim savjetnikom. Dodatak pruža tehničku pomoć, ali sam po sebi ne jamči pravnu usklađenost internetske trgovine.
 
 ## Mogućnosti
 
 - zasebna sidrena cijena za jednostavne proizvode i varijacije
 - početno popunjavanje prazne sidrene cijene trenutačnom aktivnom WooCommerce cijenom
-- postojeće sidrene cijene nikada se automatski ne prepisuju
+- postojeće sidrene cijene ne prepisuju se automatski
 - prikaz sidrene cijene na stranici proizvoda, arhivama i drugim WooCommerce popisima
-- prilagodljiv tekst, font, stil, boja te veličina za desktop i mobitel
+- prilagodljiv tekst, font, stil, boja i veličina prikaza za računala i mobilne uređaje
 - javni CSV i XML cjenik sa stalnim URL-ovima
-- dnevno generiranje i odgođeno osvježavanje nakon promjene proizvoda ili zalihe
+- ručno i dnevno generiranje cjenika
+- odgođeno osvježavanje nakon promjene proizvoda ili zalihe
 - najmanje 30 dana arhive cjenika
 - izvoz varijacija, zalihe, kategorija, brenda, barkoda i podataka o posebnom obliku prodaje
-- pregled spremnosti podataka, zadnje pogreške i ugrađena pomoć
+- pregled spremnosti podataka i prikaz zadnje pogreške
+- ugrađena pomoć i dijagnostika
 - podrška za WooCommerce HPOS te Cart i Checkout Blocks
 
 ## Zahtjevi
@@ -26,59 +35,167 @@ Dodatak je izrađen kao tehnička pomoć hrvatskim trgovcima u provedbi odluka o
 
 ## Instalacija
 
-1. Preuzmite `sidrena-cijena-v1.1.5.zip` sa stranice [Releases](https://github.com/mgracanin/woocommerce-sidrena-cijena-cjenik/releases/latest).
-2. U WordPress administraciji otvorite **Dodaci → Dodaj dodatak → Prenesi dodatak**.
-3. Odaberite ZIP, zatim instalirajte i aktivirajte dodatak.
-4. Otvorite **Sidrena cijena → Sidrena cijena** te provjerite početno predložene vrijednosti.
-5. Na kartici **Cjenik** unesite podatke o prodajnom objektu i kliknite **Generiraj cjenik sada**.
+1. Otvorite stranicu [najnovijeg izdanja](https://github.com/mgracanin/woocommerce-sidrena-cijena-cjenik/releases/latest).
+2. U odjeljku **Assets** preuzmite instalacijski paket `sidrena-cijena-vX.Y.Z.zip`.
+3. U WordPress administraciji otvorite **Dodaci → Dodaj dodatak → Prenesi dodatak**.
+4. Odaberite preuzeti ZIP, a zatim instalirajte i aktivirajte dodatak.
+5. Otvorite **Sidrena cijena → Sidrena cijena** i provjerite početno predložene vrijednosti.
+6. Otvorite karticu **Cjenik**, unesite podatke o prodajnom objektu i kliknite **Generiraj cjenik sada**.
+7. Provjerite javne CSV i XML poveznice u anonimnom prozoru preglednika.
 
-Nadogradnja se trenutačno izvodi ponovnim prijenosom ZIP-a iz novog GitHub izdanja. Dodatak ne sadrži automatsko ažuriranje izvan službenog WordPress direktorija.
+Nadogradnja se trenutačno izvodi ponovnim prijenosom instalacijskog ZIP-a iz novog GitHub izdanja. Dodatak zasad ne sadrži vlastiti sustav automatskog ažuriranja izvan službenog WordPress direktorija dodataka.
+
+## Sidrena cijena
+
+Prilikom početne inicijalizacije prazno polje sidrene cijene automatski se popunjava trenutačnom aktivnom WooCommerce cijenom.
+
+Postojeće sidrene cijene pritom se ne mijenjaju niti automatski prepisuju.
+
+> [!WARNING]
+> Trenutačna WooCommerce cijena ne mora odgovarati cijeni koja je vrijedila na relevantni datum. Automatski unesene vrijednosti potrebno je provjeriti prema stvarnoj povijesti cijena i obvezama koje se primjenjuju na trgovca.
+
+Sidrena cijena može se zasebno uređivati za:
+
+- jednostavne proizvode
+- varijabilne proizvode
+- pojedinačne varijacije
+
+Izgled prikaza može se prilagoditi kroz postavke dodatka:
+
+- tekst oznake
+- veličina fonta
+- veličina fonta na mobilnim uređajima
+- vrsta fonta
+- debljina i stil fonta
+- boja teksta
 
 ## Javni cjenik
 
-Nakon uključivanja odgovarajućeg formata, stalne adrese su:
+Nakon uključivanja odgovarajućeg formata, cjenik je dostupan na stalnim URL-ovima:
 
 - `https://vasa-domena.hr/cjenik-proizvoda.csv`
 - `https://vasa-domena.hr/cjenik-proizvoda.xml`
 
-Na javnoj stranici mogu se koristiti kratki kodovi:
+Stalne adrese ostaju jednake i nakon generiranja nove verzije cjenika, zbog čega su pogodne za vanjske sustave i automatizirano preuzimanje.
+
+### Kratki kodovi
+
+Za prikaz poveznica za preuzimanje na javnoj stranici mogu se koristiti sljedeći kratki kodovi:
 
 ```text
 [sidrena_cjenik]
+```
+
+Prikaz poveznice za XML:
+
+```text
 [sidrena_cjenik format="xml"]
+```
+
+Prikaz poveznica za oba formata:
+
+```text
 [sidrena_cjenik format="oba"]
+```
+
+Prikaz poveznica za oba formata i javne arhive:
+
+```text
 [sidrena_cjenik format="oba" arhiva="da"]
 ```
 
-WP-Cron se pokreće posjetima stranici. Za pouzdano dnevno generiranje prije 8:00 preporučuje se poslužiteljski cron koji redovito poziva `wp-cron.php`.
+## Generiranje i arhiva cjenika
 
-## Sidrena cijena
+Cjenik se može generirati ručno kroz administraciju dodatka.
 
-Prilikom prve inicijalizacije prazno polje dobiva trenutačnu aktivnu WooCommerce cijenu. Postojeća vrijednost ostaje netaknuta. To olakšava početno postavljanje, ali automatski predloženu vrijednost treba provjeriti prema stvarnoj povijesti cijena i pravnoj obvezi trgovca.
+Dodatak također podržava:
+
+- dnevno automatsko generiranje
+- odgođeno osvježavanje nakon promjene proizvoda ili zalihe
+- arhiviranje prethodnih verzija cjenika
+- čuvanje najmanje 30 dana arhive
+- CSV i XML format
+- HTTP zaglavlja `ETag` i `Last-Modified`
+
+WordPressov WP-Cron pokreće se prilikom posjeta stranici. Zbog toga izvršavanje u točno određeno vrijeme nije zajamčeno na trgovinama s malo posjeta.
+
+Za pouzdano dnevno generiranje preporučuje se postaviti poslužiteljski cron zadatak koji redovito poziva `wp-cron.php`.
+
+## Podaci u cjeniku
+
+Ovisno o vrsti proizvoda i dostupnim podacima, cjenik može sadržavati:
+
+- naziv proizvoda
+- šifru proizvoda
+- brend
+- jedinicu mjere
+- cijenu po jedinici
+- maloprodajnu cijenu
+- oznaku posebnog oblika prodaje
+- naziv posebnog oblika prodaje
+- sidrenu cijenu
+- barkod
+- dostupnost
+- kategorije proizvoda
+- podatke o varijacijama
+
+Dodatak podržava WooCommerce Brands i više često korištenih dodataka za brendove i barkodove.
+
+Prije javne objave provjerite potpunost i točnost izvezenih podataka te odgovara li format trenutačno važećim tehničkim zahtjevima.
 
 ## Pravna podloga
 
-- [Odluka NN 101/2026, broj 1212](https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1212.html) — prikaz dodatne cijene
-- [Odluka NN 101/2026, broj 1213](https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html) — objava i čuvanje cjenika
+- [Odluka NN 101/2026, broj 1212](https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1212.html) – prikaz dodatne cijene
+- [Odluka NN 101/2026, broj 1213](https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html) – objava i čuvanje cjenika
 
-Dodatak pruža tehničke alate, ali ne jamči pravnu usklađenost konkretne trgovine. Vlasnik trgovine odgovoran je za točnost podataka, konfiguraciju i pravodobnu objavu.
+Dodatak olakšava tehničku provedbu navedenih odluka, ali ne jamči pravnu usklađenost konkretne internetske trgovine.
+
+Vlasnik trgovine odgovoran je za:
+
+- točnost i potpunost podataka
+- ispravnu konfiguraciju dodatka
+- provjeru automatski predloženih sidrenih cijena
+- pravodobno generiranje i objavu cjenika
+- usklađenost s važećim propisima
+
+Dodatak se daje u dobroj namjeri i bez jamstva, u skladu s uvjetima licence GNU GPL.
 
 ## Razvoj i provjera
 
-Sintaksa PHP datoteka provjerava se u GitHub Actions na PHP-u 7.4 i 8.3. Lokalni instalacijski paket možete izraditi u PowerShellu:
+PHP sintaksa automatski se provjerava kroz GitHub Actions na PHP-u 7.4 i 8.3.
+
+Lokalni instalacijski paket moguće je izraditi u PowerShellu:
 
 ```powershell
 .\scripts\build-release.ps1
 ```
 
-Paket nastaje u direktoriju `dist/` i sadrži samo datoteke potrebne WordPressu.
+Paket nastaje u direktoriju `dist/` i sadrži samo datoteke potrebne za instalaciju dodatka u WordPress.
 
-Prijave grešaka i prijedlozi dobrodošli su u [Issues](https://github.com/mgracanin/woocommerce-sidrena-cijena-cjenik/issues). Upute za doprinos nalaze se u [CONTRIBUTING.md](CONTRIBUTING.md), a sigurnosne prijave u [SECURITY.md](SECURITY.md).
+Statičke provjere moguće je pokrenuti naredbom:
+
+```powershell
+node .\tests\static-check.mjs
+```
+
+## Prijava problema i doprinos
+
+Prijave grešaka i prijedlozi dobrodošli su u odjeljku [Issues](https://github.com/mgracanin/woocommerce-sidrena-cijena-cjenik/issues).
+
+Prije prijave problema provjerite postoji li već otvorena prijava za isti problem.
+
+Upute za doprinos nalaze se u datoteci [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Moguće sigurnosne propuste nemojte objavljivati kao javni Issue. Upute za sigurnosne prijave nalaze se u datoteci [SECURITY.md](SECURITY.md).
 
 ## Autor
 
-Matija Gračanin — [matijag@gmail.com](mailto:matijag@gmail.com)
+**Matija Gračanin**
+
+Kontakt: [matijag@gmail.com](mailto:matijag@gmail.com)
 
 ## Licenca
 
-Ovaj je dodatak slobodan softver objavljen pod licencom [GNU General Public License v2.0 ili novijom](LICENSE).
+Ovaj dodatak slobodan je softver objavljen pod licencom [GNU General Public License v2.0 ili novijom](LICENSE).
+
+Možete ga koristiti, proučavati, mijenjati i distribuirati pod uvjetima navedene licence.
