@@ -4,7 +4,7 @@ Tags: woocommerce, cijena, cjenik, csv, hrvatska
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -85,6 +85,9 @@ Ne. WP-Cron se pokreće prometom na web-stranici. Za zajamčeno izvršenje upotr
 Ne. Dodatak tehnički podržava javno objavljene zahtjeve. Vlasnik trgovine mora provjeriti podatke, poslovna pravila i konačnu usklađenost.
 
 == Changelog ==
+
+= 1.2.2 =
+* Ispravljena obnova generation locka kada se više stranica proizvoda obradi unutar iste sekunde.
 
 = 1.2.1 =
 * Konfiguracija sidrene cijene premještena je u namespaciranu Config klasu uz kompatibilnost postojećih ključeva.

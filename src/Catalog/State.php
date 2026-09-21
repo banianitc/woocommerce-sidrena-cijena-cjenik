@@ -113,7 +113,10 @@ final class GenerationLock
         }
 
         $replacement = $this->ownedValue;
-        $replacement['expires_at'] = time() + $this->ttl;
+        $replacement['expires_at'] = max(
+            time() + $this->ttl,
+            (int) $this->ownedValue['expires_at'] + 1
+        );
         if (!AtomicOption::replaceIfEquals($this->optionName, $this->ownedValue, $replacement)) {
             return false;
         }

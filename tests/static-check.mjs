@@ -105,10 +105,10 @@ const readme = fs.readFileSync(path.join(root, 'readme.txt'), 'utf8');
 
 assert(main.indexOf("'src/Config.php'") < main.indexOf("'includes/cjenik.php'"), 'Config must be loaded before cjenik.php');
 assert(main.includes('Config::registerLegacyConstants()'), 'Legacy constant compatibility registration is missing');
-assert(main.includes('* Version: 1.2.1'), 'Plugin header version is not 1.2.1');
+assert(main.includes('* Version: 1.2.2'), 'Plugin header version is not 1.2.2');
 assert(main.includes('* Author: Matija Gračanin'), 'Plugin author is not Matija Gračanin');
 assert(main.includes('* Author Email: matijag@gmail.com'), 'Plugin author email is missing');
-assert(readme.includes('Stable tag: 1.2.1'), 'Readme stable tag is not 1.2.1');
+assert(readme.includes('Stable tag: 1.2.2'), 'Readme stable tag is not 1.2.2');
 assert(main.includes("'pomoc'           => __('Pomoć'"), 'Help tab navigation is missing');
 assert(main.includes('function sidrena_cijena_render_help_tab()'), 'Help tab renderer is missing');
 assert(main.includes('[sidrena_cjenik format="oba" arhiva="da"]'), 'Help tab shortcode documentation is incomplete');
@@ -163,6 +163,7 @@ assert(cjenik.includes("'mime'   => 'application/xml; charset=utf-8'"), 'XML con
 assert(catalogRuntime.includes('class GenerationLock'), 'Shared generation lock is missing');
 assert(catalogRuntime.includes('final class Config'), 'Config class is missing');
 assert(catalogRuntime.includes('function refresh()'), 'Generation lock lease renewal is missing');
+assert(catalogRuntime.includes("(int) $this->ownedValue['expires_at'] + 1"), 'Generation lock renewal must advance even within the same second');
 assert(catalogRuntime.includes('class DirtyState'), 'Versioned dirty state is missing');
 assert(catalogRuntime.includes('spreadsheetSafeText'), 'CSV formula neutralization is missing');
 assert(catalogRuntime.includes("fputcsv($this->handle, $values, $this->delimiter, '\"', '')"), 'CSV writer must use an explicit empty escape parameter');
