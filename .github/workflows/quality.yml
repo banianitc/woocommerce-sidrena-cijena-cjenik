@@ -45,8 +45,19 @@ jobs:
           $zip = [System.IO.Compression.ZipFile]::OpenRead($archive.FullName)
           try {
             $names = @($zip.Entries.FullName)
-            if ($names.Count -ne 3) { throw "Unexpected archive entry count: $($names.Count)" }
-            foreach ($required in @('sidrena-cijena/sidrena-cijena.php', 'sidrena-cijena/includes/cjenik.php', 'sidrena-cijena/readme.txt')) {
+            $requiredFiles = @(
+              'sidrena-cijena/sidrena-cijena.php',
+              'sidrena-cijena/readme.txt',
+              'sidrena-cijena/LICENSE',
+              'sidrena-cijena/NOTICE.md',
+              'sidrena-cijena/includes/cjenik.php',
+              'sidrena-cijena/src/Config.php',
+              'sidrena-cijena/src/Catalog/State.php',
+              'sidrena-cijena/src/Catalog/StreamWriters.php',
+              'sidrena-cijena/src/Catalog/CatalogEngine.php'
+            )
+            if ($names.Count -ne $requiredFiles.Count) { throw "Unexpected archive entry count: $($names.Count)" }
+            foreach ($required in $requiredFiles) {
               if ($required -notin $names) { throw "Missing archive entry: $required" }
             }
           } finally {
