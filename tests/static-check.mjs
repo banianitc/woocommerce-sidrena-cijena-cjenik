@@ -6,6 +6,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const files = [
   path.join(root, 'sidrena-cijena.php'),
   path.join(root, 'includes', 'cjenik.php'),
+  path.join(root, 'src', 'Config.php'),
   path.join(root, 'src', 'Catalog', 'State.php'),
   path.join(root, 'src', 'Catalog', 'StreamWriters.php'),
   path.join(root, 'src', 'Catalog', 'CatalogEngine.php'),
@@ -102,18 +103,19 @@ const catalogRuntime = runtimeSources.slice(2).join('\n');
 const combined = [main, cjenik].join('\n');
 const readme = fs.readFileSync(path.join(root, 'readme.txt'), 'utf8');
 
-assert(main.indexOf("define('SIDRENA_CIJENA_META_KEY'") < main.indexOf("require_once plugin_dir_path"), 'Plugin constants must be defined before cjenik.php is loaded');
-assert(main.includes('* Version: 1.2.0'), 'Plugin header version is not 1.2.0');
+assert(main.indexOf("'src/Config.php'") < main.indexOf("'includes/cjenik.php'"), 'Config must be loaded before cjenik.php');
+assert(main.includes('Config::registerLegacyConstants()'), 'Legacy constant compatibility registration is missing');
+assert(main.includes('* Version: 1.2.1'), 'Plugin header version is not 1.2.1');
 assert(main.includes('* Author: Matija Gračanin'), 'Plugin author is not Matija Gračanin');
 assert(main.includes('* Author Email: matijag@gmail.com'), 'Plugin author email is missing');
-assert(readme.includes('Stable tag: 1.2.0'), 'Readme stable tag is not 1.2.0');
+assert(readme.includes('Stable tag: 1.2.1'), 'Readme stable tag is not 1.2.1');
 assert(main.includes("'pomoc'           => __('Pomoć'"), 'Help tab navigation is missing');
 assert(main.includes('function sidrena_cijena_render_help_tab()'), 'Help tab renderer is missing');
 assert(main.includes('[sidrena_cjenik format="oba" arhiva="da"]'), 'Help tab shortcode documentation is incomplete');
 assert(main.includes("declare_compatibility('custom_order_tables', __FILE__, true)"), 'HPOS compatibility declaration is missing');
 assert(main.includes("declare_compatibility('cart_checkout_blocks', __FILE__, true)"), 'Cart and Checkout Blocks compatibility declaration is missing');
 assert(main.includes('sidrena_cijena_initialize_product_anchor'), 'Automatic anchor-price initialization is missing');
-assert(main.includes("get_option(SIDRENA_CIJENA_AUTO_INITIALIZED_OPTION) === 'yes'"), 'One-time initialization guard is missing');
+assert(main.includes("get_option(Config::AUTO_INITIALIZED_OPTION) === 'yes'"), 'One-time initialization guard is missing');
 
 const functionNames = [...combined.matchAll(/function\s+([a-zA-Z0-9_]+)\s*\(/g)].map((match) => match[1]);
 const duplicates = functionNames.filter((name, index) => functionNames.indexOf(name) !== index);
@@ -154,11 +156,12 @@ assert(cjenik.includes("add_shortcode('sidrena_cjenik'"), 'Public price-list sho
 assert(cjenik.includes("add_rewrite_rule('^cjenik-proizvoda\\.csv$'"), 'Stable public CSV route is missing');
 assert(cjenik.includes("add_rewrite_rule('^cjenik-proizvoda\\.xml$'"), 'Stable public XML route is missing');
 assert(cjenik.includes('CJENIK_MIN_RETENTION_DAYS'), 'Retention guard is missing');
-assert(cjenik.includes('cjenik_get_inherited_meta($product, $parent, SIDRENA_CIJENA_META_KEY)'), 'Anchor price export is missing');
+assert(cjenik.includes('cjenik_get_inherited_meta($product, $parent, Config::ANCHOR_META_KEY)'), 'Anchor price export is missing');
 assert(catalogRuntime.includes("$format . '_download_name'"), 'Timestamped download filenames are missing');
 assert(cjenik.includes('encoding="UTF-8"'), 'Explicit UTF-8 XML encoding is missing');
 assert(cjenik.includes("'mime'   => 'application/xml; charset=utf-8'"), 'XML content type is missing');
 assert(catalogRuntime.includes('class GenerationLock'), 'Shared generation lock is missing');
+assert(catalogRuntime.includes('final class Config'), 'Config class is missing');
 assert(catalogRuntime.includes('function refresh()'), 'Generation lock lease renewal is missing');
 assert(catalogRuntime.includes('class DirtyState'), 'Versioned dirty state is missing');
 assert(catalogRuntime.includes('spreadsheetSafeText'), 'CSV formula neutralization is missing');

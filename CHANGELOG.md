@@ -2,6 +2,13 @@
 
 Sve značajne promjene projekta bilježe se u ovoj datoteci.
 
+## [1.2.1] - 2026-09-21
+
+### Refaktorirano
+
+- konfiguracija sidrene cijene premještena je u namespaciranu `Config` klasu
+- postojeći meta-ključevi, opcije i globalne konstante ostaju kompatibilni
+
 ## [1.2.0] - 2026-09-21
 
 ### Sigurnost i pouzdanost

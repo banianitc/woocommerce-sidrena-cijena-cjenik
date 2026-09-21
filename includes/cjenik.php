@@ -12,6 +12,8 @@
  * see NOTICE.md for provenance and later modifications.
  */
 
+use MatijaGracanin\SidrenaCijena\Config;
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -328,7 +330,7 @@ function cjenik_build_row($product, $parent = null) {
     $brand_names = cjenik_get_brand_names($product, $parent);
 
     $price = $product->get_price();
-    $stored_anchor_price = cjenik_get_inherited_meta($product, $parent, SIDRENA_CIJENA_META_KEY);
+    $stored_anchor_price = cjenik_get_inherited_meta($product, $parent, Config::ANCHOR_META_KEY);
     $anchor_price = $stored_anchor_price;
     if ($anchor_price === '') {
         $anchor_price = $price;
@@ -818,17 +820,17 @@ function cjenik_activate() {
     cjenik_register_rewrite_rule();
     flush_rewrite_rules(false);
     cjenik_schedule_cron();
-    update_option(CJENIK_DB_VERSION_OPTION, SIDRENA_CIJENA_VERSION, false);
+    update_option(CJENIK_DB_VERSION_OPTION, Config::VERSION, false);
 }
 
 add_action('init', 'cjenik_maybe_upgrade', 20);
 function cjenik_maybe_upgrade() {
-    if (get_option(CJENIK_DB_VERSION_OPTION) === SIDRENA_CIJENA_VERSION) {
+    if (get_option(CJENIK_DB_VERSION_OPTION) === Config::VERSION) {
         return;
     }
 
     flush_rewrite_rules(false);
-    update_option(CJENIK_DB_VERSION_OPTION, SIDRENA_CIJENA_VERSION, false);
+    update_option(CJENIK_DB_VERSION_OPTION, Config::VERSION, false);
     cjenik_queue_refresh();
 }
 

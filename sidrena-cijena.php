@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Sidrena Cijena i Cjenik | Matija Gračanin
  * Description: Prikaz sidrene cijene i javni strojno čitljivi cjenik za WooCommerce prema odlukama NN 101/2026.
- * Version: 1.2.0
+ * Version: 1.2.1
  * Requires at least: 6.0
  * Tested up to: 7.1
  * Requires PHP: 7.4
@@ -23,31 +23,14 @@
  * See NOTICE.md for provenance and modification details.
  */
 
+use MatijaGracanin\SidrenaCijena\Config;
+
 if (!defined('ABSPATH')) {
     exit;
 }
 
-define('SIDRENA_CIJENA_DATE', '10.09.2026.');
-define('SIDRENA_CIJENA_META_KEY', '_anchor_price');
-define('SIDRENA_CIJENA_VERSION', '1.2.0');
-define('SIDRENA_CIJENA_OPTION', 'sidrena_cijena_enabled');
-define('SIDRENA_CIJENA_AUTO_INITIALIZED_OPTION', 'sidrena_cijena_auto_initialized');
-define('SIDRENA_CIJENA_LABEL_OPTION', 'sidrena_cijena_label_text');
-define('SIDRENA_CIJENA_FONT_SIZE_OPTION', 'sidrena_cijena_font_size');
-define('SIDRENA_CIJENA_FONT_FAMILY_OPTION', 'sidrena_cijena_font_family');
-define('SIDRENA_CIJENA_FONT_WEIGHT_OPTION', 'sidrena_cijena_font_weight');
-define('SIDRENA_CIJENA_FONT_STYLE_OPTION', 'sidrena_cijena_font_style');
-define('SIDRENA_CIJENA_COLOR_OPTION', 'sidrena_cijena_color');
-define('SIDRENA_CIJENA_FONT_SIZE_MOBILE_OPTION', 'sidrena_cijena_font_size_mobile');
-define('SIDRENA_CIJENA_MOBILE_BREAKPOINT', 768);
-define('SIDRENA_CIJENA_DEFAULT_LABEL', 'Sidrena cijena na dan 10.09.2026.');
-define('SIDRENA_CIJENA_DEFAULT_FONT_SIZE', 12);
-define('SIDRENA_CIJENA_DEFAULT_FONT_SIZE_MOBILE', 11);
-define('SIDRENA_CIJENA_DEFAULT_FONT_FAMILY', 'inherit');
-define('SIDRENA_CIJENA_DEFAULT_FONT_WEIGHT', 'normal');
-define('SIDRENA_CIJENA_DEFAULT_FONT_STYLE', 'normal');
-define('SIDRENA_CIJENA_DEFAULT_COLOR', '#666666');
-
+require_once plugin_dir_path(__FILE__) . 'src/Config.php';
+Config::registerLegacyConstants();
 require_once plugin_dir_path(__FILE__) . 'includes/cjenik.php';
 
 /**
@@ -95,7 +78,7 @@ function sidrena_cijena_initialize_product_anchor($product_id) {
 
     foreach ($targets as $target_id) {
         $target = wc_get_product($target_id);
-        if (!$target || $target->get_status() === 'trash' || $target->get_meta(SIDRENA_CIJENA_META_KEY, true) !== '') {
+        if (!$target || $target->get_status() === 'trash' || $target->get_meta(Config::ANCHOR_META_KEY, true) !== '') {
             continue;
         }
 
@@ -104,7 +87,7 @@ function sidrena_cijena_initialize_product_anchor($product_id) {
             continue;
         }
 
-        update_post_meta($target_id, SIDRENA_CIJENA_META_KEY, $current_price);
+        update_post_meta($target_id, Config::ANCHOR_META_KEY, $current_price);
         $initialized++;
     }
 
@@ -121,14 +104,14 @@ function sidrena_cijena_initialize_anchor_after_product_update($product_id) {
 
 add_action('admin_init', 'sidrena_cijena_maybe_initialize_existing_anchors');
 function sidrena_cijena_maybe_initialize_existing_anchors() {
-    if (get_option(SIDRENA_CIJENA_AUTO_INITIALIZED_OPTION) === 'yes'
+    if (get_option(Config::AUTO_INITIALIZED_OPTION) === 'yes'
         || !current_user_can('manage_woocommerce')
         || !function_exists('wc_get_products')) {
         return;
     }
 
     $initialized = sidrena_cijena_fill_missing_from_current_prices();
-    update_option(SIDRENA_CIJENA_AUTO_INITIALIZED_OPTION, 'yes', false);
+    update_option(Config::AUTO_INITIALIZED_OPTION, 'yes', false);
     set_transient('sidrena_cijena_initialized_notice_' . get_current_user_id(), $initialized, 5 * MINUTE_IN_SECONDS);
 }
 
@@ -187,11 +170,11 @@ function sidrena_cijena_missing_woocommerce_notice() {
 add_action('woocommerce_product_options_pricing', 'sidrena_cijena_add_field');
 function sidrena_cijena_add_field() {
     woocommerce_wp_text_input(array(
-        'id'          => SIDRENA_CIJENA_META_KEY,
+        'id'          => Config::ANCHOR_META_KEY,
         'label'       => sprintf(
             /* translators: %s: reference date */
             __('Sidrena cijena (%s)', 'sidrena-cijena'),
-            SIDRENA_CIJENA_DATE
+            Config::REFERENCE_DATE
         ),
         'desc_tip'    => true,
         'description' => __('Ako polje ostane prazno, dodatak će pri spremanju početno kopirati trenutačnu aktualnu cijenu. Vrijednost se nakon toga neće automatski mijenjati. Provjerite iznos prema vlastitoj evidenciji.', 'sidrena-cijena'),
@@ -206,19 +189,19 @@ function sidrena_cijena_save_field($post_id) {
         return;
     }
 
-    if (isset($_POST[SIDRENA_CIJENA_META_KEY])) {
-        $raw = sanitize_text_field(wp_unslash($_POST[SIDRENA_CIJENA_META_KEY]));
+    if (isset($_POST[Config::ANCHOR_META_KEY])) {
+        $raw = sanitize_text_field(wp_unslash($_POST[Config::ANCHOR_META_KEY]));
 
         if ($raw === '') {
             $product = wc_get_product($post_id);
             $initial_price = sidrena_cijena_get_current_price($product);
             if ($initial_price === '') {
-                delete_post_meta($post_id, SIDRENA_CIJENA_META_KEY);
+                delete_post_meta($post_id, Config::ANCHOR_META_KEY);
             } else {
-                update_post_meta($post_id, SIDRENA_CIJENA_META_KEY, $initial_price);
+                update_post_meta($post_id, Config::ANCHOR_META_KEY, $initial_price);
             }
         } else {
-            update_post_meta($post_id, SIDRENA_CIJENA_META_KEY, wc_format_decimal($raw));
+            update_post_meta($post_id, Config::ANCHOR_META_KEY, wc_format_decimal($raw));
         }
     }
 }
@@ -231,7 +214,7 @@ function sidrena_cijena_quick_edit_field() {
         <label class="alignleft" style="width:100%;">
             <span class="title"><?php echo esc_html__('Sidrena cijena', 'sidrena-cijena'); ?></span>
             <span class="input-text-wrap">
-                <input type="text" name="<?php echo esc_attr(SIDRENA_CIJENA_META_KEY); ?>" class="text sidrena_cijena_quick_edit_field" value="" />
+                <input type="text" name="<?php echo esc_attr(Config::ANCHOR_META_KEY); ?>" class="text sidrena_cijena_quick_edit_field" value="" />
             </span>
         </label>
     </div>
@@ -241,7 +224,7 @@ function sidrena_cijena_quick_edit_field() {
 add_action('manage_product_posts_custom_column', 'sidrena_cijena_output_hidden_value', 20, 2);
 function sidrena_cijena_output_hidden_value($column, $post_id) {
     if ($column === 'price') {
-        $value = get_post_meta($post_id, SIDRENA_CIJENA_META_KEY, true);
+        $value = get_post_meta($post_id, Config::ANCHOR_META_KEY, true);
         echo '<div class="sidrena_cijena_hidden_value" style="display:none;">' . esc_html($value) . '</div>';
     }
 }
@@ -252,19 +235,19 @@ function sidrena_cijena_quick_edit_save($product) {
         return;
     }
 
-    if (isset($_POST[SIDRENA_CIJENA_META_KEY])) {
-        $raw = sanitize_text_field(wp_unslash($_POST[SIDRENA_CIJENA_META_KEY]));
+    if (isset($_POST[Config::ANCHOR_META_KEY])) {
+        $raw = sanitize_text_field(wp_unslash($_POST[Config::ANCHOR_META_KEY]));
         $post_id = $product->get_id();
 
         if ($raw === '') {
             $initial_price = sidrena_cijena_get_current_price($product);
             if ($initial_price === '') {
-                delete_post_meta($post_id, SIDRENA_CIJENA_META_KEY);
+                delete_post_meta($post_id, Config::ANCHOR_META_KEY);
             } else {
-                update_post_meta($post_id, SIDRENA_CIJENA_META_KEY, $initial_price);
+                update_post_meta($post_id, Config::ANCHOR_META_KEY, $initial_price);
             }
         } else {
-            update_post_meta($post_id, SIDRENA_CIJENA_META_KEY, wc_format_decimal($raw));
+            update_post_meta($post_id, Config::ANCHOR_META_KEY, wc_format_decimal($raw));
         }
     }
 }
@@ -309,44 +292,44 @@ function sidrena_cijena_quick_edit_script($hook) {
 
 // 3. Prikaz ispod cijene - pokriva stranicu proizvoda, kategorije/shop, related/upsell/cross-sell, widgete itd.
 function sidrena_cijena_get_style_settings() {
-    $label = get_option(SIDRENA_CIJENA_LABEL_OPTION, SIDRENA_CIJENA_DEFAULT_LABEL);
+    $label = get_option(Config::LABEL_OPTION, Config::DEFAULT_LABEL);
     if ($label === '') {
-        $label = SIDRENA_CIJENA_DEFAULT_LABEL;
+        $label = Config::DEFAULT_LABEL;
     }
 
-    $font_size = (int) get_option(SIDRENA_CIJENA_FONT_SIZE_OPTION, SIDRENA_CIJENA_DEFAULT_FONT_SIZE);
+    $font_size = (int) get_option(Config::FONT_SIZE_OPTION, Config::DEFAULT_FONT_SIZE);
     if ($font_size < 8) {
         $font_size = 8;
     } elseif ($font_size > 32) {
         $font_size = 32;
     }
 
-    $font_size_mobile = (int) get_option(SIDRENA_CIJENA_FONT_SIZE_MOBILE_OPTION, SIDRENA_CIJENA_DEFAULT_FONT_SIZE_MOBILE);
+    $font_size_mobile = (int) get_option(Config::MOBILE_FONT_SIZE_OPTION, Config::DEFAULT_MOBILE_FONT_SIZE);
     if ($font_size_mobile < 8) {
         $font_size_mobile = 8;
     } elseif ($font_size_mobile > 32) {
         $font_size_mobile = 32;
     }
 
-    $font_family = get_option(SIDRENA_CIJENA_FONT_FAMILY_OPTION, SIDRENA_CIJENA_DEFAULT_FONT_FAMILY);
+    $font_family = get_option(Config::FONT_FAMILY_OPTION, Config::DEFAULT_FONT_FAMILY);
     if (!array_key_exists($font_family, sidrena_cijena_font_family_choices())) {
-        $font_family = SIDRENA_CIJENA_DEFAULT_FONT_FAMILY;
+        $font_family = Config::DEFAULT_FONT_FAMILY;
     }
 
-    $font_weight = get_option(SIDRENA_CIJENA_FONT_WEIGHT_OPTION, SIDRENA_CIJENA_DEFAULT_FONT_WEIGHT);
+    $font_weight = get_option(Config::FONT_WEIGHT_OPTION, Config::DEFAULT_FONT_WEIGHT);
     if (!array_key_exists($font_weight, sidrena_cijena_font_weight_choices())) {
-        $font_weight = SIDRENA_CIJENA_DEFAULT_FONT_WEIGHT;
+        $font_weight = Config::DEFAULT_FONT_WEIGHT;
     }
 
-    $font_style = get_option(SIDRENA_CIJENA_FONT_STYLE_OPTION, SIDRENA_CIJENA_DEFAULT_FONT_STYLE);
+    $font_style = get_option(Config::FONT_STYLE_OPTION, Config::DEFAULT_FONT_STYLE);
     if (!array_key_exists($font_style, sidrena_cijena_font_style_choices())) {
-        $font_style = SIDRENA_CIJENA_DEFAULT_FONT_STYLE;
+        $font_style = Config::DEFAULT_FONT_STYLE;
     }
 
-    $color = get_option(SIDRENA_CIJENA_COLOR_OPTION, SIDRENA_CIJENA_DEFAULT_COLOR);
+    $color = get_option(Config::COLOR_OPTION, Config::DEFAULT_COLOR);
     $sanitized_color = sanitize_hex_color($color);
     if (!$sanitized_color) {
-        $sanitized_color = SIDRENA_CIJENA_DEFAULT_COLOR;
+        $sanitized_color = Config::DEFAULT_COLOR;
     }
 
     return array(
@@ -376,12 +359,12 @@ function sidrena_cijena_build_formatted_line($formatted_price) {
 
 add_action('wp_head', 'sidrena_cijena_output_css');
 function sidrena_cijena_output_css() {
-    if (get_option(SIDRENA_CIJENA_OPTION, 'yes') !== 'yes') {
+    if (get_option(Config::DISPLAY_ENABLED_OPTION, 'yes') !== 'yes') {
         return;
     }
 
     $s = sidrena_cijena_get_style_settings();
-    $breakpoint = (int) SIDRENA_CIJENA_MOBILE_BREAKPOINT;
+    $breakpoint = (int) Config::MOBILE_BREAKPOINT;
     ?>
     <style id="sidrena-cijena-css">
         .sidrena-cijena {
@@ -415,7 +398,7 @@ function sidrena_cijena_variable_anchor_range($product) {
         if (!$variation || $variation->get_status() !== 'publish') {
             continue;
         }
-        $value = $variation->get_meta(SIDRENA_CIJENA_META_KEY, true);
+        $value = $variation->get_meta(Config::ANCHOR_META_KEY, true);
         if ($value === '') {
             $value = sidrena_cijena_get_current_price($variation);
         }
@@ -444,11 +427,11 @@ function sidrena_cijena_append_to_price_html($price_html, $product) {
         return $price_html;
     }
 
-    if (get_option(SIDRENA_CIJENA_OPTION, 'yes') !== 'yes') {
+    if (get_option(Config::DISPLAY_ENABLED_OPTION, 'yes') !== 'yes') {
         return $price_html;
     }
 
-    $anchor_price = $product->get_meta(SIDRENA_CIJENA_META_KEY, true);
+    $anchor_price = $product->get_meta(Config::ANCHOR_META_KEY, true);
 
     if (($anchor_price === '' || $anchor_price === null) && $product->is_type('variable')) {
         $range = sidrena_cijena_variable_anchor_range($product);
@@ -476,7 +459,7 @@ function sidrena_cijena_append_to_price_html($price_html, $product) {
 // 3b. Varijabilni proizvodi - polje po varijaciji (npr. veličina/boja), i prikaz kad kupac odabere varijaciju
 add_action('woocommerce_product_after_variable_attributes', 'sidrena_cijena_variation_field', 10, 3);
 function sidrena_cijena_variation_field($loop, $variation_data, $variation) {
-    $value = get_post_meta($variation->ID, SIDRENA_CIJENA_META_KEY, true);
+    $value = get_post_meta($variation->ID, Config::ANCHOR_META_KEY, true);
     ?>
     <p class="form-row form-row-full">
         <label>
@@ -484,7 +467,7 @@ function sidrena_cijena_variation_field($loop, $variation_data, $variation) {
             printf(
                 /* translators: %s: reference date */
                 esc_html__('Sidrena cijena (%s)', 'sidrena-cijena'),
-                esc_html(SIDRENA_CIJENA_DATE)
+                esc_html(Config::REFERENCE_DATE)
             );
             ?>
         </label>
@@ -512,12 +495,12 @@ function sidrena_cijena_save_variation_field($variation_id, $i) {
             $variation = wc_get_product($variation_id);
             $initial_price = sidrena_cijena_get_current_price($variation);
             if ($initial_price === '') {
-                delete_post_meta($variation_id, SIDRENA_CIJENA_META_KEY);
+                delete_post_meta($variation_id, Config::ANCHOR_META_KEY);
             } else {
-                update_post_meta($variation_id, SIDRENA_CIJENA_META_KEY, $initial_price);
+                update_post_meta($variation_id, Config::ANCHOR_META_KEY, $initial_price);
             }
         } else {
-            update_post_meta($variation_id, SIDRENA_CIJENA_META_KEY, wc_format_decimal($raw));
+            update_post_meta($variation_id, Config::ANCHOR_META_KEY, wc_format_decimal($raw));
         }
     }
 }
@@ -528,11 +511,11 @@ function sidrena_cijena_variation_price_html($variation_data, $product, $variati
         return $variation_data;
     }
 
-    if (get_option(SIDRENA_CIJENA_OPTION, 'yes') !== 'yes') {
+    if (get_option(Config::DISPLAY_ENABLED_OPTION, 'yes') !== 'yes') {
         return $variation_data;
     }
 
-    $anchor_price = $variation->get_meta(SIDRENA_CIJENA_META_KEY, true);
+    $anchor_price = $variation->get_meta(Config::ANCHOR_META_KEY, true);
 
     if ($anchor_price === '' || $anchor_price === null) {
         $anchor_price = sidrena_cijena_get_current_price($variation);
@@ -664,59 +647,59 @@ function sidrena_cijena_render_tab_content() {
     }
 
     if (isset($_POST['sidrena_cijena_save']) && check_admin_referer('sidrena_cijena_settings_save', 'sidrena_cijena_nonce')) {
-        $enabled = isset($_POST[SIDRENA_CIJENA_OPTION]) ? 'yes' : 'no';
-        update_option(SIDRENA_CIJENA_OPTION, $enabled);
+        $enabled = isset($_POST[Config::DISPLAY_ENABLED_OPTION]) ? 'yes' : 'no';
+        update_option(Config::DISPLAY_ENABLED_OPTION, $enabled);
 
-        $label = isset($_POST[SIDRENA_CIJENA_LABEL_OPTION]) ? sanitize_text_field(wp_unslash($_POST[SIDRENA_CIJENA_LABEL_OPTION])) : '';
+        $label = isset($_POST[Config::LABEL_OPTION]) ? sanitize_text_field(wp_unslash($_POST[Config::LABEL_OPTION])) : '';
         if ($label === '') {
-            $label = SIDRENA_CIJENA_DEFAULT_LABEL;
+            $label = Config::DEFAULT_LABEL;
         }
-        update_option(SIDRENA_CIJENA_LABEL_OPTION, $label);
+        update_option(Config::LABEL_OPTION, $label);
 
-        $font_size = isset($_POST[SIDRENA_CIJENA_FONT_SIZE_OPTION]) ? (int) $_POST[SIDRENA_CIJENA_FONT_SIZE_OPTION] : SIDRENA_CIJENA_DEFAULT_FONT_SIZE;
+        $font_size = isset($_POST[Config::FONT_SIZE_OPTION]) ? (int) $_POST[Config::FONT_SIZE_OPTION] : Config::DEFAULT_FONT_SIZE;
         if ($font_size < 8) {
             $font_size = 8;
         } elseif ($font_size > 32) {
             $font_size = 32;
         }
-        update_option(SIDRENA_CIJENA_FONT_SIZE_OPTION, $font_size);
+        update_option(Config::FONT_SIZE_OPTION, $font_size);
 
-        $font_size_mobile = isset($_POST[SIDRENA_CIJENA_FONT_SIZE_MOBILE_OPTION]) ? (int) $_POST[SIDRENA_CIJENA_FONT_SIZE_MOBILE_OPTION] : SIDRENA_CIJENA_DEFAULT_FONT_SIZE_MOBILE;
+        $font_size_mobile = isset($_POST[Config::MOBILE_FONT_SIZE_OPTION]) ? (int) $_POST[Config::MOBILE_FONT_SIZE_OPTION] : Config::DEFAULT_MOBILE_FONT_SIZE;
         if ($font_size_mobile < 8) {
             $font_size_mobile = 8;
         } elseif ($font_size_mobile > 32) {
             $font_size_mobile = 32;
         }
-        update_option(SIDRENA_CIJENA_FONT_SIZE_MOBILE_OPTION, $font_size_mobile);
+        update_option(Config::MOBILE_FONT_SIZE_OPTION, $font_size_mobile);
 
-        $font_family = isset($_POST[SIDRENA_CIJENA_FONT_FAMILY_OPTION]) ? sanitize_text_field(wp_unslash($_POST[SIDRENA_CIJENA_FONT_FAMILY_OPTION])) : SIDRENA_CIJENA_DEFAULT_FONT_FAMILY;
+        $font_family = isset($_POST[Config::FONT_FAMILY_OPTION]) ? sanitize_text_field(wp_unslash($_POST[Config::FONT_FAMILY_OPTION])) : Config::DEFAULT_FONT_FAMILY;
         if (!array_key_exists($font_family, sidrena_cijena_font_family_choices())) {
-            $font_family = SIDRENA_CIJENA_DEFAULT_FONT_FAMILY;
+            $font_family = Config::DEFAULT_FONT_FAMILY;
         }
-        update_option(SIDRENA_CIJENA_FONT_FAMILY_OPTION, $font_family);
+        update_option(Config::FONT_FAMILY_OPTION, $font_family);
 
-        $font_weight = isset($_POST[SIDRENA_CIJENA_FONT_WEIGHT_OPTION]) ? sanitize_text_field(wp_unslash($_POST[SIDRENA_CIJENA_FONT_WEIGHT_OPTION])) : SIDRENA_CIJENA_DEFAULT_FONT_WEIGHT;
+        $font_weight = isset($_POST[Config::FONT_WEIGHT_OPTION]) ? sanitize_text_field(wp_unslash($_POST[Config::FONT_WEIGHT_OPTION])) : Config::DEFAULT_FONT_WEIGHT;
         if (!array_key_exists($font_weight, sidrena_cijena_font_weight_choices())) {
-            $font_weight = SIDRENA_CIJENA_DEFAULT_FONT_WEIGHT;
+            $font_weight = Config::DEFAULT_FONT_WEIGHT;
         }
-        update_option(SIDRENA_CIJENA_FONT_WEIGHT_OPTION, $font_weight);
+        update_option(Config::FONT_WEIGHT_OPTION, $font_weight);
 
-        $font_style = isset($_POST[SIDRENA_CIJENA_FONT_STYLE_OPTION]) ? sanitize_text_field(wp_unslash($_POST[SIDRENA_CIJENA_FONT_STYLE_OPTION])) : SIDRENA_CIJENA_DEFAULT_FONT_STYLE;
+        $font_style = isset($_POST[Config::FONT_STYLE_OPTION]) ? sanitize_text_field(wp_unslash($_POST[Config::FONT_STYLE_OPTION])) : Config::DEFAULT_FONT_STYLE;
         if (!array_key_exists($font_style, sidrena_cijena_font_style_choices())) {
-            $font_style = SIDRENA_CIJENA_DEFAULT_FONT_STYLE;
+            $font_style = Config::DEFAULT_FONT_STYLE;
         }
-        update_option(SIDRENA_CIJENA_FONT_STYLE_OPTION, $font_style);
+        update_option(Config::FONT_STYLE_OPTION, $font_style);
 
-        $color = isset($_POST[SIDRENA_CIJENA_COLOR_OPTION]) ? sanitize_hex_color(wp_unslash($_POST[SIDRENA_CIJENA_COLOR_OPTION])) : '';
+        $color = isset($_POST[Config::COLOR_OPTION]) ? sanitize_hex_color(wp_unslash($_POST[Config::COLOR_OPTION])) : '';
         if (!$color) {
-            $color = SIDRENA_CIJENA_DEFAULT_COLOR;
+            $color = Config::DEFAULT_COLOR;
         }
-        update_option(SIDRENA_CIJENA_COLOR_OPTION, $color);
+        update_option(Config::COLOR_OPTION, $color);
 
         echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Postavke spremljene.', 'sidrena-cijena') . '</p></div>';
     }
 
-    $enabled = get_option(SIDRENA_CIJENA_OPTION, 'yes');
+    $enabled = get_option(Config::DISPLAY_ENABLED_OPTION, 'yes');
     $s = sidrena_cijena_get_style_settings();
     $label = $s['label'];
     $font_size = $s['font_size'];
@@ -740,7 +723,7 @@ function sidrena_cijena_render_tab_content() {
                     <th scope="row"><?php echo esc_html__('Prikaz sidrene cijene', 'sidrena-cijena'); ?></th>
                     <td>
                         <label>
-                            <input type="checkbox" name="<?php echo esc_attr(SIDRENA_CIJENA_OPTION); ?>" value="1" <?php checked($enabled, 'yes'); ?> />
+                            <input type="checkbox" name="<?php echo esc_attr(Config::DISPLAY_ENABLED_OPTION); ?>" value="1" <?php checked($enabled, 'yes'); ?> />
                             <?php echo esc_html__('Prikaži sidrenu cijenu uz trenutačnu cijenu na cijeloj web stranici', 'sidrena-cijena'); ?>
                         </label>
                         <p class="description">
@@ -748,7 +731,7 @@ function sidrena_cijena_render_tab_content() {
                             printf(
                                 /* translators: %s: reference date */
                                 esc_html__('Kad je uključeno, sidrena cijena (na dan %s) prikazuje se ispod redovne cijene svugdje gdje WooCommerce prikazuje cijenu proizvoda. Sam iznos unosite po proizvodu u Products → uredi proizvod → tab General.', 'sidrena-cijena'),
-                                esc_html(SIDRENA_CIJENA_DATE)
+                                esc_html(Config::REFERENCE_DATE)
                             );
                             ?>
                         </p>
@@ -759,7 +742,7 @@ function sidrena_cijena_render_tab_content() {
                         <label for="sidrena-cijena-label"><?php echo esc_html__('Tekst oznake', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
-                        <input type="text" id="sidrena-cijena-label" name="<?php echo esc_attr(SIDRENA_CIJENA_LABEL_OPTION); ?>" value="<?php echo esc_attr($label); ?>" class="regular-text" />
+                        <input type="text" id="sidrena-cijena-label" name="<?php echo esc_attr(Config::LABEL_OPTION); ?>" value="<?php echo esc_attr($label); ?>" class="regular-text" />
                         <p class="description"><?php echo esc_html__('Tekst koji se prikazuje ispred iznosa sidrene cijene na web stranici. Ostavite prazno za vraćanje na zadani tekst.', 'sidrena-cijena'); ?></p>
                     </td>
                 </tr>
@@ -768,7 +751,7 @@ function sidrena_cijena_render_tab_content() {
                         <label for="sidrena-cijena-font-family"><?php echo esc_html__('Vrsta fonta', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
-                        <select id="sidrena-cijena-font-family" name="<?php echo esc_attr(SIDRENA_CIJENA_FONT_FAMILY_OPTION); ?>">
+                        <select id="sidrena-cijena-font-family" name="<?php echo esc_attr(Config::FONT_FAMILY_OPTION); ?>">
                             <?php foreach (sidrena_cijena_font_family_choices() as $value => $option_label) : ?>
                                 <option value="<?php echo esc_attr($value); ?>" <?php selected($font_family, $value); ?>><?php echo esc_html($option_label); ?></option>
                             <?php endforeach; ?>
@@ -780,7 +763,7 @@ function sidrena_cijena_render_tab_content() {
                         <label for="sidrena-cijena-font-weight"><?php echo esc_html__('Debljina fonta', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
-                        <select id="sidrena-cijena-font-weight" name="<?php echo esc_attr(SIDRENA_CIJENA_FONT_WEIGHT_OPTION); ?>">
+                        <select id="sidrena-cijena-font-weight" name="<?php echo esc_attr(Config::FONT_WEIGHT_OPTION); ?>">
                             <?php foreach (sidrena_cijena_font_weight_choices() as $value => $option_label) : ?>
                                 <option value="<?php echo esc_attr($value); ?>" <?php selected($font_weight, $value); ?>><?php echo esc_html($option_label); ?></option>
                             <?php endforeach; ?>
@@ -792,7 +775,7 @@ function sidrena_cijena_render_tab_content() {
                         <label for="sidrena-cijena-font-style"><?php echo esc_html__('Stil fonta', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
-                        <select id="sidrena-cijena-font-style" name="<?php echo esc_attr(SIDRENA_CIJENA_FONT_STYLE_OPTION); ?>">
+                        <select id="sidrena-cijena-font-style" name="<?php echo esc_attr(Config::FONT_STYLE_OPTION); ?>">
                             <?php foreach (sidrena_cijena_font_style_choices() as $value => $option_label) : ?>
                                 <option value="<?php echo esc_attr($value); ?>" <?php selected($font_style, $value); ?>><?php echo esc_html($option_label); ?></option>
                             <?php endforeach; ?>
@@ -804,7 +787,7 @@ function sidrena_cijena_render_tab_content() {
                         <label for="sidrena-cijena-font-size"><?php echo esc_html__('Veličina fonta', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
-                        <input type="number" id="sidrena-cijena-font-size" name="<?php echo esc_attr(SIDRENA_CIJENA_FONT_SIZE_OPTION); ?>" value="<?php echo esc_attr($font_size); ?>" min="8" max="32" step="1" class="small-text" /> px
+                        <input type="number" id="sidrena-cijena-font-size" name="<?php echo esc_attr(Config::FONT_SIZE_OPTION); ?>" value="<?php echo esc_attr($font_size); ?>" min="8" max="32" step="1" class="small-text" /> px
                         <p class="description"><?php echo esc_html__('Veličina fonta teksta sidrene cijene na desktop ekranima, u pikselima (8-32).', 'sidrena-cijena'); ?></p>
                     </td>
                 </tr>
@@ -813,13 +796,13 @@ function sidrena_cijena_render_tab_content() {
                         <label for="sidrena-cijena-font-size-mobile"><?php echo esc_html__('Veličina fonta (mobitel)', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
-                        <input type="number" id="sidrena-cijena-font-size-mobile" name="<?php echo esc_attr(SIDRENA_CIJENA_FONT_SIZE_MOBILE_OPTION); ?>" value="<?php echo esc_attr($font_size_mobile); ?>" min="8" max="32" step="1" class="small-text" /> px
+                        <input type="number" id="sidrena-cijena-font-size-mobile" name="<?php echo esc_attr(Config::MOBILE_FONT_SIZE_OPTION); ?>" value="<?php echo esc_attr($font_size_mobile); ?>" min="8" max="32" step="1" class="small-text" /> px
                         <p class="description">
                             <?php
                             printf(
                                 /* translators: %d: breakpoint in pixels */
                                 esc_html__('Veličina fonta na ekranima širine do %d px (mobiteli i manji tableti). Iznad te širine koristi se desktop veličina.', 'sidrena-cijena'),
-                                (int) SIDRENA_CIJENA_MOBILE_BREAKPOINT
+                                (int) Config::MOBILE_BREAKPOINT
                             );
                             ?>
                         </p>
@@ -830,7 +813,7 @@ function sidrena_cijena_render_tab_content() {
                         <label for="sidrena-cijena-color"><?php echo esc_html__('Boja teksta', 'sidrena-cijena'); ?></label>
                     </th>
                     <td>
-                        <input type="text" id="sidrena-cijena-color" class="sidrena-cijena-color-field" name="<?php echo esc_attr(SIDRENA_CIJENA_COLOR_OPTION); ?>" value="<?php echo esc_attr($color); ?>" data-default-color="<?php echo esc_attr(SIDRENA_CIJENA_DEFAULT_COLOR); ?>" />
+                        <input type="text" id="sidrena-cijena-color" class="sidrena-cijena-color-field" name="<?php echo esc_attr(Config::COLOR_OPTION); ?>" value="<?php echo esc_attr($color); ?>" data-default-color="<?php echo esc_attr(Config::DEFAULT_COLOR); ?>" />
                     </td>
                 </tr>
                 <tr>
@@ -918,7 +901,7 @@ function sidrena_cijena_get_anchor_status() {
                 continue;
             }
             $status['total']++;
-            if ($target->get_meta(SIDRENA_CIJENA_META_KEY, true) === '') {
+            if ($target->get_meta(Config::ANCHOR_META_KEY, true) === '') {
                 $status['missing']++;
             } else {
                 $status['set']++;
@@ -947,7 +930,7 @@ function sidrena_cijena_fill_missing_from_current_prices() {
         $targets = $product->is_type('variable') ? $product->get_children() : array($id);
         foreach ($targets as $target_id) {
             $target = wc_get_product($target_id);
-            if (!$target || $target->get_status() !== 'publish' || $target->get_meta(SIDRENA_CIJENA_META_KEY, true) !== '') {
+            if (!$target || $target->get_status() !== 'publish' || $target->get_meta(Config::ANCHOR_META_KEY, true) !== '') {
                 continue;
             }
 
@@ -956,7 +939,7 @@ function sidrena_cijena_fill_missing_from_current_prices() {
                 continue;
             }
 
-            $target->update_meta_data(SIDRENA_CIJENA_META_KEY, $current_price);
+            $target->update_meta_data(Config::ANCHOR_META_KEY, $current_price);
             $target->save_meta_data();
             $filled++;
         }
@@ -979,7 +962,7 @@ function sidrena_cijena_render_help_tab() {
     $last_generated = (int) get_option(CJENIK_LAST_GENERATED_OPTION, 0);
     $next_scheduled = wp_next_scheduled(CJENIK_CRON_HOOK);
     $last_error = get_option(CJENIK_LAST_ERROR_OPTION, '');
-    $display_enabled = get_option(SIDRENA_CIJENA_OPTION, 'yes') === 'yes';
+    $display_enabled = get_option(Config::DISPLAY_ENABLED_OPTION, 'yes') === 'yes';
     $automatic_enabled = get_option(CJENIK_ENABLED_OPTION, 'yes') === 'yes';
     $csv_enabled = get_option(CJENIK_FORMAT_CSV_OPTION, 'yes') === 'yes';
     $xml_enabled = get_option(CJENIK_FORMAT_XML_OPTION, 'yes') === 'yes';
@@ -1064,7 +1047,7 @@ function sidrena_cijena_render_help_tab() {
             <h2><?php echo esc_html__('Dijagnostika ove instalacije', 'sidrena-cijena'); ?></h2>
             <table class="widefat striped">
                 <tbody>
-                    <tr><td><?php echo esc_html__('Verzija dodatka', 'sidrena-cijena'); ?></td><td><strong><?php echo esc_html(SIDRENA_CIJENA_VERSION); ?></strong></td></tr>
+                    <tr><td><?php echo esc_html__('Verzija dodatka', 'sidrena-cijena'); ?></td><td><strong><?php echo esc_html(Config::VERSION); ?></strong></td></tr>
                     <tr><td><?php echo esc_html__('Prikaz sidrene cijene', 'sidrena-cijena'); ?></td><td class="<?php echo $display_enabled ? 'sidrena-help-ok' : 'sidrena-help-warning'; ?>"><?php echo $display_enabled ? esc_html__('Uključen', 'sidrena-cijena') : esc_html__('Isključen', 'sidrena-cijena'); ?></td></tr>
                     <tr><td><?php echo esc_html__('Automatski cjenik', 'sidrena-cijena'); ?></td><td class="<?php echo $automatic_enabled ? 'sidrena-help-ok' : 'sidrena-help-warning'; ?>"><?php echo $automatic_enabled ? esc_html__('Uključen', 'sidrena-cijena') : esc_html__('Isključen', 'sidrena-cijena'); ?></td></tr>
                     <tr><td><?php echo esc_html__('Formati', 'sidrena-cijena'); ?></td><td><?php echo esc_html(implode(', ', array_filter(array($csv_enabled ? 'CSV' : '', $xml_enabled ? 'XML' : '')))); ?></td></tr>
