@@ -953,6 +953,8 @@ function sidrena_cijena_fill_missing_from_current_prices() {
 
             $target->update_meta_data(Config::ANCHOR_META_KEY, $current_price);
             $target->save_meta_data();
+            // save_meta_data() does not fire the product update hooks that clear this cache.
+            sidrena_cijena_clear_anchor_range_cache($target_id);
             $filled++;
         }
     }
