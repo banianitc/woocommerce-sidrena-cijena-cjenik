@@ -2,6 +2,22 @@
 
 Sve značajne promjene projekta bilježe se u ovoj datoteci.
 
+## [1.3.0] - 2026-09-26
+
+### Ispravljeno
+
+- varijabilni proizvodi više ne dobivaju sidrenu cijenu na roditeljskom proizvodu; sidrene cijene ostaju po varijacijama (vrijednosti koje su ranije verzije spremile na roditelja nisu uklonjene)
+- proizvodi bez cijene izvoze se s praznom maloprodajnom cijenom umjesto 0.00, pa ih provjera spremnosti ponovno prikazuje
+- prazna sidrena cijena početno se popunjava redovnom cijenom (bez akcijskog sniženja) umjesto aktivne cijene; isto vrijedi za privremeni prikaz i izvoz
+- neispravni UTF-8 znakovi više ne prazne vrijednosti, a kontrolni znakovi više ne kvare XML cjenik
+- predmemorija raspona sidrenih cijena briše se nakon skupnog popunjavanja
+
+### Poboljšano
+
+- arhivska kopija cjenika sprema se samo kad se sadržaj promijeni, a najmanje jednom dnevno
+- zaostale privremene datoteke prekinutog generiranja automatski se brišu
+- javni download više ne izračunava hash cijele datoteke pri svakom zahtjevu
+
 ## [1.2.3] - 2026-09-21
 
 ### Refaktorirano
