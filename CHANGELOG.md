@@ -2,6 +2,12 @@
 
 Sve značajne promjene projekta bilježe se u ovoj datoteci.
 
+## [1.3.1] - 2026-09-26
+
+### Dodano
+
+- instalacijski ZIP paket za WordPress automatski se izrađuje, provjerava i prilaže svakom GitHub izdanju
+
 ## [1.3.0] - 2026-09-26
 
 ### Ispravljeno
