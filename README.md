@@ -121,6 +121,8 @@ CI provjerava PHP 7.4/8.3, stvarne CSV/XML datoteke uz testne WooCommerce podatk
 
 Izvoze za oglašivačke platforme i prikaze cijena izvan WooCommerce HTML hookova dodatak ne prilagođava automatski; provjerite ih zasebno.
 
+Izdanje se objavljuje automatski: nakon što se verzija podigne u zaglavlju dodatka, `readme.txt` i `CHANGELOG.md`, push oznake `vX.Y.Z` pokreće GitHub Actions koji izrađuje i provjerava paket te ga prilaže GitHub izdanju, s bilješkama iz `CHANGELOG.md`. Za postojeću oznaku izdanje se može ponovno izraditi ručnim pokretanjem workflowa **Release**.
+
 Dodatak je tehnička pomoć, a ne pravno mišljenje ili jamstvo usklađenosti. Trgovac odgovara za obuhvat ponude, iznimke, točnost podataka i pravodobnu objavu.
 
 ## Autor i licenca
