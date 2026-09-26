@@ -547,6 +547,15 @@ function cjenik_cleanup_old_files() {
     }
     $cutoff = time() - ($retention_days * DAY_IN_SECONDS);
 
+    // Staging files are left behind when a run dies on a timeout or memory limit.
+    // Two hours is well beyond the generation lock lease, so no live run owns them.
+    $stale_temporary_cutoff = time() - 2 * HOUR_IN_SECONDS;
+    foreach ((array) glob(trailingslashit($location['path']) . '.sidrena-*') as $temporary) {
+        if (is_file($temporary) && filemtime($temporary) < $stale_temporary_cutoff) {
+            @unlink($temporary);
+        }
+    }
+
     $files = glob(trailingslashit($location['path']) . 'cjenik_*');
     if (!$files) {
         return;
