@@ -333,7 +333,7 @@ function cjenik_build_row($product, $parent = null) {
     $stored_anchor_price = cjenik_get_inherited_meta($product, $parent, Config::ANCHOR_META_KEY);
     $anchor_price = $stored_anchor_price;
     if ($anchor_price === '') {
-        $anchor_price = $price;
+        $anchor_price = $product->get_regular_price();
     }
     $unit = cjenik_get_inherited_meta($product, $parent, CJENIK_UNIT_META_KEY, 'kom');
     $barcode = cjenik_get_barcode($product, $parent);

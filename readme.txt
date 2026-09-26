@@ -22,7 +22,7 @@ Dodatak pruža tehničku podršku za dvije povezane obveze koje se primjenjuju o
 = Sidrena cijena =
 
 * polje na svakom proizvodu i svakoj varijaciji,
-* automatsko početno spremanje trenutačne aktualne cijene ako je polje prazno, bez kasnijeg automatskog prepisivanja,
+* automatsko početno spremanje trenutačne redovne cijene (bez akcijskog sniženja) ako je polje prazno, bez kasnijeg automatskog prepisivanja,
 * prikaz uz WooCommerce cijenu na proizvodu, trgovini, kategorijama i drugim popisima,
 * Quick Edit i pregled broja proizvoda kojima cijena nedostaje,
 * alat za početno popunjavanje samo praznih polja iz redovne cijene, bez prepisivanja postojećih vrijednosti,

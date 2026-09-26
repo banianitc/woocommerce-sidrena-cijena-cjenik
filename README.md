@@ -14,7 +14,7 @@ Dodatak je napravljen kao tehnička pomoć vlasnicima internetskih trgovina koje
 ## Mogućnosti
 
 - zasebna sidrena cijena za jednostavne proizvode i varijacije
-- početno popunjavanje prazne sidrene cijene trenutačnom aktivnom WooCommerce cijenom
+- početno popunjavanje prazne sidrene cijene trenutačnom redovnom WooCommerce cijenom (bez akcijskog sniženja)
 - postojeće sidrene cijene ne prepisuju se automatski
 - prikaz sidrene cijene na stranici proizvoda, arhivama i drugim WooCommerce popisima
 - prilagodljiv tekst, font, stil, boja i veličina prikaza za računala i mobilne uređaje
@@ -47,7 +47,7 @@ Nadogradnja se trenutačno izvodi ponovnim prijenosom instalacijskog ZIP-a iz no
 
 ## Sidrena cijena
 
-Prilikom početne inicijalizacije prazno polje sidrene cijene automatski se popunjava trenutačnom aktivnom WooCommerce cijenom.
+Prilikom početne inicijalizacije prazno polje sidrene cijene automatski se popunjava trenutačnom redovnom WooCommerce cijenom (bez akcijskog sniženja).
 
 Postojeće sidrene cijene pritom se ne mijenjaju niti automatski prepisuju.
 
