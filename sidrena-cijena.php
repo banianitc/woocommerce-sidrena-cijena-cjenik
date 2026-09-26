@@ -189,11 +189,17 @@ function sidrena_cijena_save_field($post_id) {
         return;
     }
 
+    $product = wc_get_product($post_id);
+    if (!$product || $product->is_type('variable')) {
+        // The pricing group is only hidden for variable products, so its empty
+        // field is still submitted. Anchors live on the variations instead.
+        return;
+    }
+
     if (isset($_POST[Config::ANCHOR_META_KEY])) {
         $raw = sanitize_text_field(wp_unslash($_POST[Config::ANCHOR_META_KEY]));
 
         if ($raw === '') {
-            $product = wc_get_product($post_id);
             $initial_price = sidrena_cijena_get_current_price($product);
             if ($initial_price === '') {
                 delete_post_meta($post_id, Config::ANCHOR_META_KEY);
@@ -231,7 +237,7 @@ function sidrena_cijena_output_hidden_value($column, $post_id) {
 
 add_action('woocommerce_product_quick_edit_save', 'sidrena_cijena_quick_edit_save');
 function sidrena_cijena_quick_edit_save($product) {
-    if (!current_user_can('edit_post', $product->get_id())) {
+    if (!current_user_can('edit_post', $product->get_id()) || $product->is_type('variable')) {
         return;
     }
 
@@ -282,6 +288,8 @@ function sidrena_cijena_quick_edit_script($hook) {
                     if (\$saleLabel.length && \$ourField.length) {
                         \$saleLabel.after(\$ourField);
                     }
+                    var productType = $('#woocommerce_inline_' + postId).find('.product_type').text();
+                    \$ourField.toggle(productType !== 'variable');
                 }
             };
         })(jQuery);
