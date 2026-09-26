@@ -171,6 +171,8 @@ Lokalni instalacijski paket moguće je izraditi u PowerShellu:
 
 Paket nastaje u direktoriju `dist/` i sadrži samo datoteke potrebne za instalaciju dodatka u WordPress.
 
+Izdanje se objavljuje automatski: nakon što se verzija podigne u zaglavlju dodatka, `readme.txt` i `CHANGELOG.md`, push oznake `vX.Y.Z` pokreće GitHub Actions koji izrađuje i provjerava paket te ga prilaže GitHub izdanju, s bilješkama iz `CHANGELOG.md`. Za postojeću oznaku izdanje se može ponovno izraditi ručnim pokretanjem workflowa **Release**.
+
 Statičke provjere moguće je pokrenuti naredbom:
 
 ```powershell

@@ -41,25 +41,4 @@ jobs:
         run: |
           $archive = Get-ChildItem ./dist/sidrena-cijena-v*.zip | Select-Object -First 1
           if (-not $archive) { throw 'Release archive was not created.' }
-          Add-Type -AssemblyName System.IO.Compression.FileSystem
-          $zip = [System.IO.Compression.ZipFile]::OpenRead($archive.FullName)
-          try {
-            $names = @($zip.Entries.FullName)
-            $requiredFiles = @(
-              'sidrena-cijena/sidrena-cijena.php',
-              'sidrena-cijena/readme.txt',
-              'sidrena-cijena/LICENSE',
-              'sidrena-cijena/NOTICE.md',
-              'sidrena-cijena/includes/cjenik.php',
-              'sidrena-cijena/src/Config.php',
-              'sidrena-cijena/src/Catalog/State.php',
-              'sidrena-cijena/src/Catalog/StreamWriters.php',
-              'sidrena-cijena/src/Catalog/CatalogEngine.php'
-            )
-            if ($names.Count -ne $requiredFiles.Count) { throw "Unexpected archive entry count: $($names.Count)" }
-            foreach ($required in $requiredFiles) {
-              if ($required -notin $names) { throw "Missing archive entry: $required" }
-            }
-          } finally {
-            $zip.Dispose()
-          }
+          ./scripts/verify-release-archive.ps1 -ArchivePath $archive.FullName
