@@ -727,7 +727,9 @@ function cjenik_handle_public_download() {
     }
 
     $modified = filemtime($path);
-    $etag = '"' . md5_file($path) . '"';
+    // Files are replaced by atomic rename, so mtime, size and inode identify a
+    // version without hashing the whole file on every anonymous request.
+    $etag = '"' . md5($modified . '-' . filesize($path) . '-' . fileinode($path)) . '"';
     header('ETag: ' . $etag);
     header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $modified) . ' GMT');
     header('Cache-Control: public, max-age=60, must-revalidate');
