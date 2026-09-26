@@ -142,7 +142,11 @@ final class XmlStreamWriter
 
     private static function escape($value)
     {
-        return htmlspecialchars((string) $value, ENT_QUOTES | ENT_XML1, 'UTF-8');
+        // Without ENT_SUBSTITUTE a single invalid UTF-8 byte empties the whole value.
+        $escaped = htmlspecialchars((string) $value, ENT_QUOTES | ENT_XML1 | ENT_SUBSTITUTE, 'UTF-8');
+
+        // Control characters such as \x0B are not allowed anywhere in XML 1.0.
+        return preg_replace('/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]/u', '', $escaped);
     }
 
     private function writeRaw($contents)
