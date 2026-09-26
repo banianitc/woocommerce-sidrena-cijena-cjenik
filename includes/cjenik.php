@@ -513,6 +513,14 @@ function cjenik_notify_failure($message) {
 // 8. Brisanje arhivskih datoteka starijih od zadanog broja dana
 function cjenik_cleanup_old_files() {
     $location = cjenik_get_dir();
+    // Staging files are left behind when a run dies on a timeout or memory limit.
+    // Two hours is well beyond the generation lock lease, so no live run owns them.
+    $stale_temporary_cutoff = time() - 2 * HOUR_IN_SECONDS;
+    foreach ((array) glob(trailingslashit($location['path']) . '.sidrena-*') as $temporary) {
+        if (is_file($temporary) && filemtime($temporary) < $stale_temporary_cutoff) {
+            @unlink($temporary);
+        }
+    }
     $last = get_option(CJENIK_LAST_FILES_OPTION, array());
     $active = array_filter(array($last['csv_file'] ?? '', $last['xml_file'] ?? '', $last['csv_download_name'] ?? '', $last['xml_download_name'] ?? ''));
     $replaced = get_option('sidrena_cijena_cjenik_replaced_at', array());
