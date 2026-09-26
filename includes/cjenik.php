@@ -28,6 +28,7 @@ define('CJENIK_STORAGE_NUMBER_OPTION', 'sidrena_cijena_cjenik_storage_number');
 define('CJENIK_LAST_GENERATED_OPTION', 'sidrena_cijena_cjenik_last_generated');
 define('CJENIK_LAST_FILES_OPTION', 'sidrena_cijena_cjenik_last_files');
 define('CJENIK_LAST_ERROR_OPTION', 'sidrena_cijena_cjenik_last_error');
+define('CJENIK_LAST_ARCHIVE_OPTION', 'sidrena_cijena_cjenik_last_archive');
 define('CJENIK_DB_VERSION_OPTION', 'sidrena_cijena_cjenik_db_version');
 define('CJENIK_DIRTY_OPTION', 'sidrena_cijena_cjenik_dirty_since');
 define('CJENIK_GENERATION_LOCK', 'sidrena_cijena_cjenik_generation_lock');

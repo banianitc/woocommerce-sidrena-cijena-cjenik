@@ -166,15 +166,20 @@ final class CatalogEngine
             $meta = cjenik_get_meta();
             $location = cjenik_get_dir();
             $writers = array();
+            $delimiter = get_option(CJENIK_DELIMITER_OPTION, CJENIK_DEFAULT_DELIMITER);
+            if (!array_key_exists($delimiter, cjenik_delimiter_choices())) {
+                $delimiter = CJENIK_DEFAULT_DELIMITER;
+            }
+
+            $contentMeta = $meta;
+            unset($contentMeta['generated_at']);
+            $content = hash_init('sha256');
+            hash_update($content, serialize(array($formats, $delimiter, $contentMeta)));
 
             foreach ($formats as $format) {
                 $temporary = $this->temporaryPath($location['path']);
                 $temporaryFiles[] = $temporary;
                 if ($format === 'csv') {
-                    $delimiter = get_option(CJENIK_DELIMITER_OPTION, CJENIK_DEFAULT_DELIMITER);
-                    if (!array_key_exists($delimiter, cjenik_delimiter_choices())) {
-                        $delimiter = CJENIK_DEFAULT_DELIMITER;
-                    }
                     $writers[$format] = new CsvStreamWriter($temporary, $delimiter, self::columns(), self::textColumns());
                 } else {
                     $writers[$format] = new XmlStreamWriter($temporary, self::columns(), $meta);
@@ -187,6 +192,7 @@ final class CatalogEngine
                 foreach ($writers as $writer) {
                     $writer->writeRow($row);
                 }
+                hash_update($content, serialize($row));
                 $rowCount++;
                 if ($rowCount % self::PAGE_SIZE === 0 || time() - $lastLockRefresh >= 60) {
                     if (!$this->lock->refresh()) {
@@ -200,6 +206,10 @@ final class CatalogEngine
                 $writer->close();
             }
 
+            $contentHash = hash_final($content);
+            $today = wp_date('Y-m-d');
+            $archive = $this->shouldArchive($contentHash, $today);
+
             $operations = array();
             $files = array(
                 'csv_url' => '', 'xml_url' => '', 'csv_file' => '', 'xml_file' => '',
@@ -208,15 +218,17 @@ final class CatalogEngine
 
             foreach (array_values($formats) as $index => $format) {
                 $source = $temporaryFiles[$index];
-                $archiveStage = $this->temporaryPath($location['path']);
-                $temporaryFiles[] = $archiveStage;
-                if (!copy($source, $archiveStage)) {
-                    throw new \RuntimeException('Nije moguće pripremiti arhivsku datoteku cjenika.');
-                }
-
                 $archiveName = cjenik_build_filename($format, $meta, true);
                 $currentName = cjenik_build_filename($format, $meta, false);
-                $operations[] = array('stage' => $archiveStage, 'target' => trailingslashit($location['path']) . $archiveName);
+
+                if ($archive) {
+                    $archiveStage = $this->temporaryPath($location['path']);
+                    $temporaryFiles[] = $archiveStage;
+                    if (!copy($source, $archiveStage)) {
+                        throw new \RuntimeException('Nije moguće pripremiti arhivsku datoteku cjenika.');
+                    }
+                    $operations[] = array('stage' => $archiveStage, 'target' => trailingslashit($location['path']) . $archiveName);
+                }
                 $operations[] = array('stage' => $source, 'target' => trailingslashit($location['path']) . $currentName);
 
                 $files[$format . '_url'] = trailingslashit($location['url']) . $currentName;
@@ -229,6 +241,9 @@ final class CatalogEngine
 
             update_option(CJENIK_LAST_GENERATED_OPTION, time());
             update_option(CJENIK_LAST_FILES_OPTION, $files, false);
+            if ($archive) {
+                update_option(CJENIK_LAST_ARCHIVE_OPTION, array('hash' => $contentHash, 'date' => $today), false);
+            }
             delete_option(CJENIK_LAST_ERROR_OPTION);
 
             $this->dirty->clearIfUnchanged($dirtySnapshot);
@@ -250,6 +265,20 @@ final class CatalogEngine
         } finally {
             $this->lock->release();
         }
+    }
+
+    /**
+     * Stock and product saves regenerate the list many times a day. Archive a
+     * generation only when its content changed, and at least once per day.
+     */
+    private function shouldArchive($contentHash, $today)
+    {
+        $last = get_option(CJENIK_LAST_ARCHIVE_OPTION, array());
+        if (!is_array($last) || !isset($last['hash'], $last['date'])) {
+            return true;
+        }
+
+        return $last['hash'] !== $contentHash || $last['date'] !== $today;
     }
 
     private function enabledFormats()
