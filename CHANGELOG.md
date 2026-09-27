@@ -2,6 +2,12 @@
 
 Sve značajne promjene projekta bilježe se u ovoj datoteci.
 
+## [1.4.0] - 2026-09-27
+
+### Poboljšano
+
+- vrijeme dnevnog generiranja bira se s dva padajuća izbornika, sat (00–23) i minuta (00–59), umjesto nekoliko ponuđenih termina između 5:00 i 7:30
+
 ## [1.3.1] - 2026-09-26
 
 ### Dodano
