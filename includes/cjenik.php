@@ -64,18 +64,11 @@ function cjenik_engine() {
     return $engine;
 }
 
-function cjenik_cron_time_choices() {
-    $choices = array();
-    for ($h = 5; $h <= 7; $h++) {
-        foreach (array('00', '15', '30', '45') as $m) {
-            if ($h === 7 && $m === '45') {
-                continue;
-            }
-            $time = sprintf('%02d:%s', $h, $m);
-            $choices[$time] = $time;
-        }
+function cjenik_normalize_cron_time($time) {
+    if (is_string($time) && preg_match('/^([01][0-9]|2[0-3]):([0-5][0-9])$/', $time)) {
+        return $time;
     }
-    return $choices;
+    return CJENIK_DEFAULT_CRON_TIME;
 }
 
 function cjenik_delimiter_choices() {
@@ -574,10 +567,7 @@ function cjenik_cleanup_old_files() {
 // 9. Automatsko generiranje - dnevno prije 8:00 i odgođeno nakon promjene proizvoda.
 add_action('init', 'cjenik_schedule_cron');
 function cjenik_schedule_cron($force = false) {
-    $time = get_option(CJENIK_CRON_TIME_OPTION, CJENIK_DEFAULT_CRON_TIME);
-    if (!array_key_exists($time, cjenik_cron_time_choices())) {
-        $time = CJENIK_DEFAULT_CRON_TIME;
-    }
+    $time = cjenik_normalize_cron_time(get_option(CJENIK_CRON_TIME_OPTION, CJENIK_DEFAULT_CRON_TIME));
 
     $scheduled_time = get_option('sidrena_cijena_cjenik_scheduled_time', '');
 
@@ -911,11 +901,9 @@ function cjenik_render_tab_content() {
         $storage_number = isset($_POST[CJENIK_STORAGE_NUMBER_OPTION]) ? sanitize_text_field(wp_unslash($_POST[CJENIK_STORAGE_NUMBER_OPTION])) : '';
         update_option(CJENIK_STORAGE_NUMBER_OPTION, $storage_number !== '' ? $storage_number : CJENIK_DEFAULT_STORAGE_NUMBER);
 
-        $cron_time = isset($_POST[CJENIK_CRON_TIME_OPTION]) ? sanitize_text_field(wp_unslash($_POST[CJENIK_CRON_TIME_OPTION])) : CJENIK_DEFAULT_CRON_TIME;
-        if (!array_key_exists($cron_time, cjenik_cron_time_choices())) {
-            $cron_time = CJENIK_DEFAULT_CRON_TIME;
-        }
-        update_option(CJENIK_CRON_TIME_OPTION, $cron_time);
+        $cron_hour = isset($_POST[CJENIK_CRON_TIME_OPTION . '_hour']) ? sanitize_text_field(wp_unslash($_POST[CJENIK_CRON_TIME_OPTION . '_hour'])) : '';
+        $cron_minute = isset($_POST[CJENIK_CRON_TIME_OPTION . '_minute']) ? sanitize_text_field(wp_unslash($_POST[CJENIK_CRON_TIME_OPTION . '_minute'])) : '';
+        update_option(CJENIK_CRON_TIME_OPTION, cjenik_normalize_cron_time($cron_hour . ':' . $cron_minute));
 
         $delimiter = isset($_POST[CJENIK_DELIMITER_OPTION]) ? wp_unslash($_POST[CJENIK_DELIMITER_OPTION]) : CJENIK_DEFAULT_DELIMITER;
         if (!array_key_exists($delimiter, cjenik_delimiter_choices())) {
@@ -962,7 +950,7 @@ function cjenik_render_tab_content() {
     $location_label = get_option(CJENIK_LOCATION_LABEL_OPTION, '');
     $object_type = get_option(CJENIK_OBJECT_TYPE_OPTION, CJENIK_DEFAULT_OBJECT_TYPE);
     $storage_number = get_option(CJENIK_STORAGE_NUMBER_OPTION, CJENIK_DEFAULT_STORAGE_NUMBER);
-    $cron_time = get_option(CJENIK_CRON_TIME_OPTION, CJENIK_DEFAULT_CRON_TIME);
+    list($cron_hour, $cron_minute) = explode(':', cjenik_normalize_cron_time(get_option(CJENIK_CRON_TIME_OPTION, CJENIK_DEFAULT_CRON_TIME)));
     $delimiter = get_option(CJENIK_DELIMITER_OPTION, CJENIK_DEFAULT_DELIMITER);
     $format_csv = get_option(CJENIK_FORMAT_CSV_OPTION, 'yes');
     $format_xml = get_option(CJENIK_FORMAT_XML_OPTION, 'yes');
@@ -1062,13 +1050,19 @@ function cjenik_render_tab_content() {
             </tr>
             <tr>
                 <th scope="row">
-                    <label for="cjenik-cron-time"><?php echo esc_html__('Vrijeme dnevnog generiranja', 'sidrena-cijena'); ?></label>
+                    <label for="cjenik-cron-time-hour"><?php echo esc_html__('Vrijeme dnevnog generiranja', 'sidrena-cijena'); ?></label>
                 </th>
                 <td>
-                    <select id="cjenik-cron-time" name="<?php echo esc_attr(CJENIK_CRON_TIME_OPTION); ?>">
-                        <?php foreach (cjenik_cron_time_choices() as $value => $option_label) : ?>
-                            <option value="<?php echo esc_attr($value); ?>" <?php selected($cron_time, $value); ?>><?php echo esc_html($option_label); ?></option>
-                        <?php endforeach; ?>
+                    <select id="cjenik-cron-time-hour" name="<?php echo esc_attr(CJENIK_CRON_TIME_OPTION . '_hour'); ?>" aria-label="<?php echo esc_attr__('Sat', 'sidrena-cijena'); ?>">
+                        <?php for ($h = 0; $h <= 23; $h++) : $value = sprintf('%02d', $h); ?>
+                            <option value="<?php echo esc_attr($value); ?>" <?php selected($cron_hour, $value); ?>><?php echo esc_html($value); ?></option>
+                        <?php endfor; ?>
+                    </select>
+                    :
+                    <select id="cjenik-cron-time-minute" name="<?php echo esc_attr(CJENIK_CRON_TIME_OPTION . '_minute'); ?>" aria-label="<?php echo esc_attr__('Minuta', 'sidrena-cijena'); ?>">
+                        <?php for ($m = 0; $m <= 59; $m++) : $value = sprintf('%02d', $m); ?>
+                            <option value="<?php echo esc_attr($value); ?>" <?php selected($cron_minute, $value); ?>><?php echo esc_html($value); ?></option>
+                        <?php endfor; ?>
                     </select>
                     <p class="description"><?php echo esc_html__('Zakonski rok je 8:00 - preporučujemo sigurnosnu marginu. WordPress WP-Cron ovisi o posjetima web-stranici; za zajamčeno izvršavanje postavite pravi poslužiteljski cron koji redovito pokreće wp-cron.php.', 'sidrena-cijena'); ?></p>
                     <?php if ($next_scheduled) : ?>
