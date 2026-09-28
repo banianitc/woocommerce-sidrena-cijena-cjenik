@@ -21,12 +21,12 @@ Dodatak pruža tehničku podršku za dvije povezane obveze koje se primjenjuju o
 
 = Sidrena cijena =
 
-* polje na svakom proizvodu i svakoj varijaciji,
+* polje za iznos i datum na svakom proizvodu i svakoj varijaciji; proizvodi dodani nakon 10.09.2026. dobivaju vlastiti datum,
 * automatsko početno spremanje trenutačne redovne cijene (bez akcijskog sniženja) ako je polje prazno, bez kasnijeg automatskog prepisivanja,
 * prikaz uz WooCommerce cijenu na proizvodu, trgovini, kategorijama i drugim popisima,
 * Quick Edit i pregled broja proizvoda kojima cijena nedostaje,
 * alat za početno popunjavanje samo praznih polja iz redovne cijene, bez prepisivanja postojećih vrijednosti,
-* prilagodljiv tekst, font, stil, boja i veličina za desktop i mobitel.
+* prilagodljiv tekst s datumom sidrene cijene (npr. `Sidrena cijena na dan %d.%m.%Y.`), font, stil, boja i veličina za desktop i mobitel.
 
 Automatsko početno popunjavanje nije zamjena za evidenciju cijena. Današnja redovna cijena ne mora biti cijena koja je vrijedila 10.09.2026. Sve predložene iznose treba provjeriti.
 

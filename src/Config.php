@@ -10,10 +10,14 @@ final class Config
 {
     const VERSION = '1.4.0';
     const REFERENCE_DATE = '10.09.2026.';
+    const REFERENCE_DATE_ISO = '2026-09-10';
     const ANCHOR_META_KEY = '_anchor_price';
+    const ANCHOR_DATE_META_KEY = '_anchor_price_date';
+    const SCHEMA_VERSION = 2;
 
     const DISPLAY_ENABLED_OPTION = 'sidrena_cijena_enabled';
     const AUTO_INITIALIZED_OPTION = 'sidrena_cijena_auto_initialized';
+    const SCHEMA_VERSION_OPTION = 'sidrena_cijena_schema_version';
     const LABEL_OPTION = 'sidrena_cijena_label_text';
     const FONT_SIZE_OPTION = 'sidrena_cijena_font_size';
     const FONT_FAMILY_OPTION = 'sidrena_cijena_font_family';
@@ -23,7 +27,10 @@ final class Config
     const MOBILE_FONT_SIZE_OPTION = 'sidrena_cijena_font_size_mobile';
 
     const MOBILE_BREAKPOINT = 768;
-    const DEFAULT_LABEL = 'Sidrena cijena na dan 10.09.2026.';
+    const DEFAULT_LABEL = 'Sidrena cijena na dan %d.%m.%Y.';
+    const LEGACY_DEFAULT_LABEL = 'Sidrena cijena na dan 10.09.2026.';
+    /** PHP date() characters that may follow % in the label. */
+    const LABEL_DATE_TOKENS = 'dDjlNSwzWFmMntLoYy';
     const DEFAULT_FONT_SIZE = 12;
     const DEFAULT_MOBILE_FONT_SIZE = 11;
     const DEFAULT_FONT_FAMILY = 'inherit';

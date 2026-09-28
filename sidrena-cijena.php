@@ -65,6 +65,138 @@ function sidrena_cijena_get_reference_price($product) {
 }
 
 /**
+ * Returns the value as Y-m-d when it is a valid calendar date, otherwise ''.
+ */
+function sidrena_cijena_parse_date($value) {
+    if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+        return '';
+    }
+
+    $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value, wp_timezone());
+    return $date && $date->format('Y-m-d') === $value ? $value : '';
+}
+
+function sidrena_cijena_product_created_date($product) {
+    $created = $product->get_date_created();
+    return $created ? $created->date_i18n('Y-m-d') : '';
+}
+
+/**
+ * Date of an anchor snapshotted now. Products that existed on the reference
+ * date are anchored to it; newer products are anchored to the snapshot day.
+ * New and draft products have no creation date yet, so they count as newer.
+ */
+function sidrena_cijena_initial_anchor_date($product) {
+    $created = sidrena_cijena_product_created_date($product);
+    if ($created !== '' && $created <= Config::REFERENCE_DATE_ISO) {
+        return Config::REFERENCE_DATE_ISO;
+    }
+
+    return current_time('Y-m-d');
+}
+
+/**
+ * Date the product's anchor price refers to. Anchors stored before dates were
+ * tracked were all shown as the reference date, so they keep it.
+ */
+function sidrena_cijena_get_anchor_date($product) {
+    $stored = sidrena_cijena_parse_date($product->get_meta(Config::ANCHOR_DATE_META_KEY, true));
+    if ($stored !== '') {
+        return $stored;
+    }
+
+    if ($product->get_meta(Config::ANCHOR_META_KEY, true) === '') {
+        return sidrena_cijena_initial_anchor_date($product);
+    }
+
+    return Config::REFERENCE_DATE_ISO;
+}
+
+/**
+ * Saves a submitted anchor. An empty price is seeded from the regular price and
+ * an empty or invalid date from sidrena_cijena_initial_anchor_date().
+ */
+function sidrena_cijena_save_anchor_input($product, $raw_price, $raw_date) {
+    $product_id = $product->get_id();
+    $price = $raw_price === '' ? sidrena_cijena_get_reference_price($product) : wc_format_decimal($raw_price);
+
+    if ($price === '') {
+        delete_post_meta($product_id, Config::ANCHOR_META_KEY);
+        delete_post_meta($product_id, Config::ANCHOR_DATE_META_KEY);
+        return;
+    }
+
+    $date = sidrena_cijena_parse_date($raw_date);
+    if ($date === '') {
+        $date = sidrena_cijena_initial_anchor_date($product);
+    }
+
+    update_post_meta($product_id, Config::ANCHOR_META_KEY, $price);
+    update_post_meta($product_id, Config::ANCHOR_DATE_META_KEY, $date);
+}
+
+/**
+ * Replaces %X in the label with the anchor date formatted by the PHP date
+ * character X (only the date characters in Config::LABEL_DATE_TOKENS); %%
+ * is a literal percent sign.
+ */
+function sidrena_cijena_format_label($label, $date) {
+    $timestamp = sidrena_cijena_date_timestamp($date);
+
+    return preg_replace_callback('/%([%a-zA-Z])/', function ($match) use ($timestamp) {
+        if ($match[1] === '%') {
+            return '%';
+        }
+        if ($timestamp === null || strpos(Config::LABEL_DATE_TOKENS, $match[1]) === false) {
+            return $match[0];
+        }
+        return wp_date($match[1], $timestamp);
+    }, $label);
+}
+
+function sidrena_cijena_date_timestamp($date) {
+    $date = sidrena_cijena_parse_date($date);
+    if ($date === '') {
+        return null;
+    }
+
+    return DateTimeImmutable::createFromFormat('!Y-m-d', $date, wp_timezone())->getTimestamp();
+}
+
+/**
+ * Every supported label token formatted for one date, for the admin preview.
+ */
+function sidrena_cijena_label_token_values($date) {
+    $timestamp = sidrena_cijena_date_timestamp($date);
+    $values = array();
+    foreach (str_split(Config::LABEL_DATE_TOKENS) as $token) {
+        $values[$token] = wp_date($token, $timestamp);
+    }
+
+    return $values;
+}
+
+/**
+ * Older versions stored the label with the reference date written out. Turn
+ * that date into placeholders so each product shows its own anchor date.
+ */
+add_action('plugins_loaded', 'sidrena_cijena_maybe_upgrade');
+function sidrena_cijena_maybe_upgrade() {
+    if ((int) get_option(Config::SCHEMA_VERSION_OPTION, 1) >= Config::SCHEMA_VERSION) {
+        return;
+    }
+
+    $label = get_option(Config::LABEL_OPTION, '');
+    if (is_string($label) && $label !== '') {
+        $label = str_replace('%', '%%', $label);
+        $label = str_replace(array('10.09.2026', '10.9.2026'), array('%d.%m.%Y', '%j.%n.%Y'), $label);
+        update_option(Config::LABEL_OPTION, $label);
+    }
+
+    update_option(Config::SCHEMA_VERSION_OPTION, Config::SCHEMA_VERSION);
+}
+
+/**
  * Stores a snapshot of the current regular price only when no anchor exists.
  */
 function sidrena_cijena_initialize_product_anchor($product_id) {
@@ -92,6 +224,7 @@ function sidrena_cijena_initialize_product_anchor($product_id) {
         }
 
         update_post_meta($target_id, Config::ANCHOR_META_KEY, $current_price);
+        update_post_meta($target_id, Config::ANCHOR_DATE_META_KEY, sidrena_cijena_initial_anchor_date($target));
         $initialized++;
     }
 
@@ -173,16 +306,31 @@ function sidrena_cijena_missing_woocommerce_notice() {
 // 1. Polje na stranici za uređivanje proizvoda (tab "General", odmah ispod redovne/akcijske cijene)
 add_action('woocommerce_product_options_pricing', 'sidrena_cijena_add_field');
 function sidrena_cijena_add_field() {
+    global $product_object;
+
     woocommerce_wp_text_input(array(
         'id'          => Config::ANCHOR_META_KEY,
         'label'       => sprintf(
-            /* translators: %s: reference date */
+            /* translators: %s: currency symbol */
             __('Sidrena cijena (%s)', 'sidrena-cijena'),
-            Config::REFERENCE_DATE
+            get_woocommerce_currency_symbol()
         ),
         'desc_tip'    => true,
         'description' => __('Ako polje ostane prazno, dodatak će pri spremanju početno kopirati trenutačnu redovnu cijenu (bez akcijskog sniženja). Vrijednost se nakon toga neće automatski mijenjati. Provjerite iznos prema vlastitoj evidenciji.', 'sidrena-cijena'),
         'data_type'   => 'price',
+    ));
+
+    woocommerce_wp_text_input(array(
+        'id'          => Config::ANCHOR_DATE_META_KEY,
+        'label'       => __('Datum sidrene cijene', 'sidrena-cijena'),
+        'type'        => 'date',
+        'value'       => $product_object instanceof WC_Product ? sidrena_cijena_get_anchor_date($product_object) : '',
+        'desc_tip'    => true,
+        'description' => sprintf(
+            /* translators: %s: reference date */
+            __('Dan na koji je vrijedila sidrena cijena. Za proizvode koji su postojali %s to je taj dan, a za novije proizvode dan početnog spremanja cijene. Ostavite prazno za automatski odabir.', 'sidrena-cijena'),
+            Config::REFERENCE_DATE
+        ),
     ));
 }
 
@@ -201,18 +349,11 @@ function sidrena_cijena_save_field($post_id) {
     }
 
     if (isset($_POST[Config::ANCHOR_META_KEY])) {
-        $raw = sanitize_text_field(wp_unslash($_POST[Config::ANCHOR_META_KEY]));
-
-        if ($raw === '') {
-            $initial_price = sidrena_cijena_get_reference_price($product);
-            if ($initial_price === '') {
-                delete_post_meta($post_id, Config::ANCHOR_META_KEY);
-            } else {
-                update_post_meta($post_id, Config::ANCHOR_META_KEY, $initial_price);
-            }
-        } else {
-            update_post_meta($post_id, Config::ANCHOR_META_KEY, wc_format_decimal($raw));
-        }
+        sidrena_cijena_save_anchor_input(
+            $product,
+            sanitize_text_field(wp_unslash($_POST[Config::ANCHOR_META_KEY])),
+            isset($_POST[Config::ANCHOR_DATE_META_KEY]) ? sanitize_text_field(wp_unslash($_POST[Config::ANCHOR_DATE_META_KEY])) : ''
+        );
     }
 }
 
@@ -227,6 +368,12 @@ function sidrena_cijena_quick_edit_field() {
                 <input type="text" name="<?php echo esc_attr(Config::ANCHOR_META_KEY); ?>" class="text sidrena_cijena_quick_edit_field" value="" />
             </span>
         </label>
+        <label class="alignleft" style="width:100%;">
+            <span class="title"><?php echo esc_html__('Datum sidrene cijene', 'sidrena-cijena'); ?></span>
+            <span class="input-text-wrap">
+                <input type="date" name="<?php echo esc_attr(Config::ANCHOR_DATE_META_KEY); ?>" class="text sidrena_cijena_quick_edit_date_field" value="" />
+            </span>
+        </label>
     </div>
     <?php
 }
@@ -234,8 +381,11 @@ function sidrena_cijena_quick_edit_field() {
 add_action('manage_product_posts_custom_column', 'sidrena_cijena_output_hidden_value', 20, 2);
 function sidrena_cijena_output_hidden_value($column, $post_id) {
     if ($column === 'price') {
-        $value = get_post_meta($post_id, Config::ANCHOR_META_KEY, true);
+        $product = wc_get_product($post_id);
+        $value = $product ? $product->get_meta(Config::ANCHOR_META_KEY, true) : '';
+        $date = $product ? sidrena_cijena_get_anchor_date($product) : '';
         echo '<div class="sidrena_cijena_hidden_value" style="display:none;">' . esc_html($value) . '</div>';
+        echo '<div class="sidrena_cijena_hidden_date" style="display:none;">' . esc_html($date) . '</div>';
     }
 }
 
@@ -246,19 +396,11 @@ function sidrena_cijena_quick_edit_save($product) {
     }
 
     if (isset($_POST[Config::ANCHOR_META_KEY])) {
-        $raw = sanitize_text_field(wp_unslash($_POST[Config::ANCHOR_META_KEY]));
-        $post_id = $product->get_id();
-
-        if ($raw === '') {
-            $initial_price = sidrena_cijena_get_reference_price($product);
-            if ($initial_price === '') {
-                delete_post_meta($post_id, Config::ANCHOR_META_KEY);
-            } else {
-                update_post_meta($post_id, Config::ANCHOR_META_KEY, $initial_price);
-            }
-        } else {
-            update_post_meta($post_id, Config::ANCHOR_META_KEY, wc_format_decimal($raw));
-        }
+        sidrena_cijena_save_anchor_input(
+            $product,
+            sanitize_text_field(wp_unslash($_POST[Config::ANCHOR_META_KEY])),
+            isset($_POST[Config::ANCHOR_DATE_META_KEY]) ? sanitize_text_field(wp_unslash($_POST[Config::ANCHOR_DATE_META_KEY])) : ''
+        );
     }
 }
 
@@ -286,6 +428,7 @@ function sidrena_cijena_quick_edit_script($hook) {
                     var \$row = $('#post-' + postId);
                     var value = \$row.find('.sidrena_cijena_hidden_value').first().text();
                     $('input.sidrena_cijena_quick_edit_field').val(value);
+                    $('input.sidrena_cijena_quick_edit_date_field').val(\$row.find('.sidrena_cijena_hidden_date').first().text());
 
                     var \$saleLabel = $('input[name=\"_sale_price\"]').closest('label');
                     var \$ourField = $('.sidrena-cijena-quick-edit-row');
@@ -355,16 +498,16 @@ function sidrena_cijena_get_style_settings() {
     );
 }
 
-function sidrena_cijena_build_line($anchor_price) {
-    return sidrena_cijena_build_formatted_line(wc_price($anchor_price));
+function sidrena_cijena_build_line($anchor_price, $anchor_date) {
+    return sidrena_cijena_build_formatted_line(wc_price($anchor_price), $anchor_date);
 }
 
-function sidrena_cijena_build_formatted_line($formatted_price) {
+function sidrena_cijena_build_formatted_line($formatted_price, $anchor_date) {
     $s = sidrena_cijena_get_style_settings();
 
     return sprintf(
         '<span class="sidrena-cijena">%s: %s</span>',
-        esc_html($s['label']),
+        esc_html(sidrena_cijena_format_label($s['label'], $anchor_date)),
         wp_kses_post($formatted_price)
     );
 }
@@ -397,14 +540,20 @@ function sidrena_cijena_output_css() {
 }
 
 add_filter('woocommerce_get_price_html', 'sidrena_cijena_append_to_price_html', 10, 2);
+/**
+ * Minimum and maximum anchor of the published variations, plus their shared
+ * anchor date. The date is '' when the variations were anchored on different
+ * days, since one label cannot state them all.
+ */
 function sidrena_cijena_variable_anchor_range($product) {
-    $cache_key = 'anchor_range_' . $product->get_id();
+    $cache_key = 'anchor_range_v2_' . $product->get_id();
     $cached = wp_cache_get($cache_key, 'sidrena_cijena');
     if (is_array($cached)) {
         return $cached;
     }
 
     $prices = array();
+    $dates = array();
     foreach ($product->get_children() as $variation_id) {
         $variation = wc_get_product($variation_id);
         if (!$variation || $variation->get_status() !== 'publish') {
@@ -416,10 +565,11 @@ function sidrena_cijena_variable_anchor_range($product) {
         }
         if ($value !== '') {
             $prices[] = (float) wc_format_decimal($value);
+            $dates[sidrena_cijena_get_anchor_date($variation)] = true;
         }
     }
 
-    $range = $prices ? array(min($prices), max($prices)) : array();
+    $range = $prices ? array(min($prices), max($prices), count($dates) === 1 ? key($dates) : '') : array();
     wp_cache_set($cache_key, $range, 'sidrena_cijena', HOUR_IN_SECONDS);
     return $range;
 }
@@ -427,10 +577,10 @@ function sidrena_cijena_variable_anchor_range($product) {
 add_action('woocommerce_update_product', 'sidrena_cijena_clear_anchor_range_cache', 20, 1);
 add_action('woocommerce_update_product_variation', 'sidrena_cijena_clear_anchor_range_cache', 20, 1);
 function sidrena_cijena_clear_anchor_range_cache($product_id) {
-    wp_cache_delete('anchor_range_' . (int) $product_id, 'sidrena_cijena');
+    wp_cache_delete('anchor_range_v2_' . (int) $product_id, 'sidrena_cijena');
     $product = function_exists('wc_get_product') ? wc_get_product($product_id) : null;
     if ($product && $product->get_parent_id()) {
-        wp_cache_delete('anchor_range_' . $product->get_parent_id(), 'sidrena_cijena');
+        wp_cache_delete('anchor_range_v2_' . $product->get_parent_id(), 'sidrena_cijena');
     }
 }
 
@@ -448,13 +598,16 @@ function sidrena_cijena_append_to_price_html($price_html, $product) {
     if (($anchor_price === '' || $anchor_price === null) && $product->is_type('variable')) {
         $range = sidrena_cijena_variable_anchor_range($product);
         if ($range) {
-            $minimum = $range[0];
-            $maximum = $range[1];
+            list($minimum, $maximum, $anchor_date) = $range;
+            if ($anchor_date === '') {
+                // Each variation shows its own dated line once it is selected.
+                return $price_html;
+            }
             $formatted = wc_price($minimum);
             if ($maximum > $minimum) {
                 $formatted .= ' &ndash; ' . wc_price($maximum);
             }
-            return $price_html . sidrena_cijena_build_formatted_line($formatted);
+            return $price_html . sidrena_cijena_build_formatted_line($formatted, $anchor_date);
         }
     }
 
@@ -465,21 +618,23 @@ function sidrena_cijena_append_to_price_html($price_html, $product) {
         }
     }
 
-    return $price_html . sidrena_cijena_build_line($anchor_price);
+    return $price_html . sidrena_cijena_build_line($anchor_price, sidrena_cijena_get_anchor_date($product));
 }
 
 // 3b. Varijabilni proizvodi - polje po varijaciji (npr. veličina/boja), i prikaz kad kupac odabere varijaciju
 add_action('woocommerce_product_after_variable_attributes', 'sidrena_cijena_variation_field', 10, 3);
 function sidrena_cijena_variation_field($loop, $variation_data, $variation) {
+    $variation_product = wc_get_product($variation->ID);
     $value = get_post_meta($variation->ID, Config::ANCHOR_META_KEY, true);
+    $date = $variation_product ? sidrena_cijena_get_anchor_date($variation_product) : '';
     ?>
-    <p class="form-row form-row-full">
+    <p class="form-row form-row-first">
         <label>
             <?php
             printf(
-                /* translators: %s: reference date */
+                /* translators: %s: currency symbol */
                 esc_html__('Sidrena cijena (%s)', 'sidrena-cijena'),
-                esc_html(Config::REFERENCE_DATE)
+                esc_html(get_woocommerce_currency_symbol())
             );
             ?>
         </label>
@@ -491,6 +646,14 @@ function sidrena_cijena_variation_field($loop, $variation_data, $variation) {
             placeholder="<?php echo esc_attr__('Prazno = kopiraj redovnu cijenu', 'sidrena-cijena'); ?>"
         />
     </p>
+    <p class="form-row form-row-last">
+        <label><?php echo esc_html__('Datum sidrene cijene', 'sidrena-cijena'); ?></label>
+        <input
+            type="date"
+            name="variable_anchor_price_date[<?php echo esc_attr($loop); ?>]"
+            value="<?php echo esc_attr($date); ?>"
+        />
+    </p>
     <?php
 }
 
@@ -500,20 +663,13 @@ function sidrena_cijena_save_variation_field($variation_id, $i) {
         return;
     }
 
-    if (isset($_POST['variable_anchor_price'][$i])) {
-        $raw = sanitize_text_field(wp_unslash($_POST['variable_anchor_price'][$i]));
-
-        if ($raw === '') {
-            $variation = wc_get_product($variation_id);
-            $initial_price = sidrena_cijena_get_reference_price($variation);
-            if ($initial_price === '') {
-                delete_post_meta($variation_id, Config::ANCHOR_META_KEY);
-            } else {
-                update_post_meta($variation_id, Config::ANCHOR_META_KEY, $initial_price);
-            }
-        } else {
-            update_post_meta($variation_id, Config::ANCHOR_META_KEY, wc_format_decimal($raw));
-        }
+    $variation = wc_get_product($variation_id);
+    if ($variation && isset($_POST['variable_anchor_price'][$i])) {
+        sidrena_cijena_save_anchor_input(
+            $variation,
+            sanitize_text_field(wp_unslash($_POST['variable_anchor_price'][$i])),
+            isset($_POST['variable_anchor_price_date'][$i]) ? sanitize_text_field(wp_unslash($_POST['variable_anchor_price_date'][$i])) : ''
+        );
     }
 }
 
@@ -537,7 +693,7 @@ function sidrena_cijena_variation_price_html($variation_data, $product, $variati
     }
 
     if (strpos($variation_data['price_html'], 'class="sidrena-cijena"') === false) {
-        $variation_data['price_html'] .= sidrena_cijena_build_line($anchor_price);
+        $variation_data['price_html'] .= sidrena_cijena_build_line($anchor_price, sidrena_cijena_get_anchor_date($variation));
     }
 
     return $variation_data;
@@ -569,14 +725,29 @@ function sidrena_cijena_add_menu() {
 
         wp_enqueue_style('wp-color-picker');
         wp_enqueue_script('wp-color-picker');
+        wp_add_inline_script(
+            'wp-color-picker',
+            'var sidrenaCijenaLabel = ' . wp_json_encode(array(
+                'defaultLabel' => Config::DEFAULT_LABEL,
+                'tokens'       => sidrena_cijena_label_token_values(Config::REFERENCE_DATE_ISO),
+            )) . ';',
+            'before'
+        );
 
         $js = "
             (function($){
                 $('.sidrena-cijena-color-field').wpColorPicker({ change: sidrena_cijena_update_preview, clear: sidrena_cijena_update_preview });
 
+                function sidrena_cijena_preview_label(label) {
+                    return label.replace(/%([%a-zA-Z])/g, function(match, token) {
+                        if (token === '%') { return '%'; }
+                        return Object.prototype.hasOwnProperty.call(sidrenaCijenaLabel.tokens, token) ? sidrenaCijenaLabel.tokens[token] : match;
+                    });
+                }
+
                 function sidrena_cijena_update_preview() {
                     setTimeout(function() {
-                        var label = $('#sidrena-cijena-label').val() || 'Sidrena cijena na dan 10.09.2026.';
+                        var label = sidrena_cijena_preview_label($('#sidrena-cijena-label').val() || sidrenaCijenaLabel.defaultLabel);
                         var size = $('#sidrena-cijena-font-size').val() || 12;
                         var sizeMobile = $('#sidrena-cijena-font-size-mobile').val() || 11;
                         var family = $('#sidrena-cijena-font-family').val() || 'inherit';
@@ -591,6 +762,7 @@ function sidrena_cijena_add_menu() {
                             'color': color
                         };
 
+                        $('#sidrena-cijena-label-preview').text(label);
                         $('#sidrena-cijena-preview').css($.extend({ 'font-size': size + 'px' }, baseCss)).text(label + ': 199,00 €');
                         $('#sidrena-cijena-preview-mobile').css($.extend({ 'font-size': sizeMobile + 'px' }, baseCss)).text(label + ': 199,00 €');
                     }, 10);
@@ -662,7 +834,9 @@ function sidrena_cijena_render_tab_content() {
         $enabled = isset($_POST[Config::DISPLAY_ENABLED_OPTION]) ? 'yes' : 'no';
         update_option(Config::DISPLAY_ENABLED_OPTION, $enabled);
 
-        $label = isset($_POST[Config::LABEL_OPTION]) ? sanitize_text_field(wp_unslash($_POST[Config::LABEL_OPTION])) : '';
+        // sanitize_text_field() would strip placeholders that look like
+        // percent-encoded octets, such as %d followed by a hex digit.
+        $label = isset($_POST[Config::LABEL_OPTION]) ? trim(preg_replace('/\s+/', ' ', wp_strip_all_tags(wp_unslash($_POST[Config::LABEL_OPTION])))) : '';
         if ($label === '') {
             $label = Config::DEFAULT_LABEL;
         }
@@ -722,7 +896,7 @@ function sidrena_cijena_render_tab_content() {
     $color = $s['color'];
     $anchor_status = sidrena_cijena_get_anchor_status();
     ?>
-        <p><?php echo esc_html__('Upravljanje prikazom referentne maloprodajne cijene koja je vrijedila 10.09.2026. bez posebnog oblika prodaje.', 'sidrena-cijena'); ?></p>
+        <p><?php echo esc_html__('Upravljanje prikazom referentne maloprodajne cijene bez posebnog oblika prodaje: za proizvode koji su postojali 10.09.2026. to je cijena tog dana, a za novije proizvode prva cijena, uz datum koji se sprema na svakom proizvodu.', 'sidrena-cijena'); ?></p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin:16px 0 20px;">
             <div style="background:#fff;border:1px solid #dcdcde;padding:14px 18px;min-width:170px;"><strong style="font-size:22px;display:block;"><?php echo (int) $anchor_status['total']; ?></strong><?php echo esc_html__('proizvoda i varijacija', 'sidrena-cijena'); ?></div>
             <div style="background:#fff;border:1px solid #dcdcde;padding:14px 18px;min-width:170px;"><strong style="font-size:22px;display:block;color:#008a20;"><?php echo (int) $anchor_status['set']; ?></strong><?php echo esc_html__('s unesenom cijenom', 'sidrena-cijena'); ?></div>
@@ -740,11 +914,7 @@ function sidrena_cijena_render_tab_content() {
                         </label>
                         <p class="description">
                             <?php
-                            printf(
-                                /* translators: %s: reference date */
-                                esc_html__('Kad je uključeno, sidrena cijena (na dan %s) prikazuje se ispod redovne cijene svugdje gdje WooCommerce prikazuje cijenu proizvoda. Sam iznos unosite po proizvodu u Products → uredi proizvod → tab General.', 'sidrena-cijena'),
-                                esc_html(Config::REFERENCE_DATE)
-                            );
+                            echo esc_html__('Kad je uključeno, sidrena cijena prikazuje se ispod redovne cijene svugdje gdje WooCommerce prikazuje cijenu proizvoda. Iznos i datum unosite po proizvodu u Products → uredi proizvod → tab General.', 'sidrena-cijena');
                             ?>
                         </p>
                     </td>
@@ -755,7 +925,17 @@ function sidrena_cijena_render_tab_content() {
                     </th>
                     <td>
                         <input type="text" id="sidrena-cijena-label" name="<?php echo esc_attr(Config::LABEL_OPTION); ?>" value="<?php echo esc_attr($label); ?>" class="regular-text" />
-                        <p class="description"><?php echo esc_html__('Tekst koji se prikazuje ispred iznosa sidrene cijene na web stranici. Ostavite prazno za vraćanje na zadani tekst.', 'sidrena-cijena'); ?></p>
+                        <p class="description">
+                            <?php
+                            printf(
+                                /* translators: %s: reference date */
+                                esc_html__('Pregled za sidrenu cijenu od %s:', 'sidrena-cijena'),
+                                esc_html(Config::REFERENCE_DATE)
+                            );
+                            ?>
+                            <strong id="sidrena-cijena-label-preview"></strong>
+                        </p>
+                        <p class="description"><?php echo esc_html__('Tekst koji se prikazuje ispred iznosa sidrene cijene na web stranici. Oznake za datum zamjenjuju se datumom sidrene cijene svakog proizvoda: %d dan (01–31), %j dan bez vodeće nule, %m mjesec (01–12), %n mjesec bez vodeće nule, %Y godina (2026), %y godina (26), %F naziv mjeseca, %% znak postotka. Ostavite prazno za vraćanje na zadani tekst.', 'sidrena-cijena'); ?></p>
                     </td>
                 </tr>
                 <tr>
@@ -851,7 +1031,7 @@ function sidrena_cijena_render_tab_content() {
         <h2><?php echo esc_html__('Brzo početno popunjavanje', 'sidrena-cijena'); ?></h2>
         <p><?php echo esc_html__('Dodatak automatski kopira redovnu WooCommerce cijenu (bez akcijskog sniženja) u prazno polje sidrene cijene. Ovaj alat može ponovno obraditi sve objavljene proizvode; postojeće sidrene cijene nikada ne prepisuje.', 'sidrena-cijena'); ?></p>
         <div class="notice notice-warning inline" style="margin:12px 0;padding:10px 12px;max-width:900px;">
-            <p style="margin:0;"><?php echo esc_html__('Važno: automatski kopirana redovna cijena nije nužno cijena koja je vrijedila 10.09.2026. Predložene iznose provjerite prema vlastitoj evidenciji, osobito ako se redovna cijena mijenjala nakon tog datuma.', 'sidrena-cijena'); ?></p>
+            <p style="margin:0;"><?php echo esc_html__('Važno: automatski kopirana redovna cijena nije nužno cijena koja je vrijedila na datum sidrene cijene. Proizvodi koji su postojali 10.09.2026. dobivaju taj datum, a noviji proizvodi današnji. Predložene iznose i datume provjerite prema vlastitoj evidenciji, osobito ako se redovna cijena mijenjala nakon tog datuma.', 'sidrena-cijena'); ?></p>
         </div>
         <form method="post" action="<?php echo esc_url($tab_url); ?>">
             <?php wp_nonce_field('sidrena_cijena_fill_missing_action', 'sidrena_cijena_fill_missing_nonce'); ?>
@@ -952,6 +1132,7 @@ function sidrena_cijena_fill_missing_from_current_prices() {
             }
 
             $target->update_meta_data(Config::ANCHOR_META_KEY, $current_price);
+            $target->update_meta_data(Config::ANCHOR_DATE_META_KEY, sidrena_cijena_initial_anchor_date($target));
             $target->save_meta_data();
             // save_meta_data() does not fire the product update hooks that clear this cache.
             sidrena_cijena_clear_anchor_range_cache($target_id);
@@ -1011,9 +1192,11 @@ function sidrena_cijena_render_help_tab() {
             <ul>
                 <li><?php echo esc_html__('Polje postoji na jednostavnim proizvodima i na svakoj varijaciji.', 'sidrena-cijena'); ?></li>
                 <li><?php echo esc_html__('Ako je prazno, pri prvom spremanju kopira se tadašnja redovna WooCommerce cijena (bez akcijskog sniženja).', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Uz iznos se sprema datum sidrene cijene: 10.09.2026. za proizvode koji su tada postojali, a dan početnog spremanja za novije proizvode. Datum se može ručno promijeniti.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Tekst oznake može sadržavati datum sidrene cijene, npr. „Sidrena cijena na dan %d.%m.%Y.”.', 'sidrena-cijena'); ?></li>
                 <li><?php echo esc_html__('Nakon početnog spremanja sidrena cijena se ne mijenja zajedno s aktualnom cijenom.', 'sidrena-cijena'); ?></li>
                 <li><?php echo esc_html__('Ručno unesene vrijednosti dodatak nikada automatski ne prepisuje.', 'sidrena-cijena'); ?></li>
-                <li><?php echo esc_html__('Za varijabilni proizvod kupcu se prikazuje vrijednost odabrane varijacije, odnosno raspon prije odabira.', 'sidrena-cijena'); ?></li>
+                <li><?php echo esc_html__('Za varijabilni proizvod kupcu se prikazuje vrijednost odabrane varijacije, odnosno raspon prije odabira ako sve varijacije imaju isti datum sidrene cijene.', 'sidrena-cijena'); ?></li>
                 <li><?php echo esc_html__('Izgled teksta, boja i veličina za desktop i mobitel podešavaju se u tabu Sidrena cijena.', 'sidrena-cijena'); ?></li>
             </ul>
             <p><strong><?php echo esc_html__('Napomena:', 'sidrena-cijena'); ?></strong> <?php echo esc_html__('automatski kopiranu redovnu cijenu treba provjeriti prema evidenciji, osobito ako se mijenjala nakon 10.09.2026.', 'sidrena-cijena'); ?></p>

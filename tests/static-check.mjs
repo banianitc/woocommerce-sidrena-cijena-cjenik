@@ -119,6 +119,10 @@ assert(main.includes("declare_compatibility('custom_order_tables', __FILE__, tru
 assert(main.includes("declare_compatibility('cart_checkout_blocks', __FILE__, true)"), 'Cart and Checkout Blocks compatibility declaration is missing');
 assert(main.includes('sidrena_cijena_initialize_product_anchor'), 'Automatic anchor-price initialization is missing');
 assert(main.includes("get_option(Config::AUTO_INITIALIZED_OPTION) === 'yes'"), 'One-time initialization guard is missing');
+assert(main.includes('function sidrena_cijena_get_anchor_date('), 'Per-product anchor date is missing');
+assert(main.includes('sidrena_cijena_format_label($s[\'label\'], $anchor_date)'), 'Storefront label must be formatted with the anchor date');
+assert(main.includes("add_action('plugins_loaded', 'sidrena_cijena_maybe_upgrade')"), 'Legacy label migration is missing');
+assert(catalogRuntime.includes("const DEFAULT_LABEL = 'Sidrena cijena na dan %d.%m.%Y.'"), 'Default label must carry date placeholders');
 
 const functionNames = [...combined.matchAll(/function\s+([a-zA-Z0-9_]+)\s*\(/g)].map((match) => match[1]);
 const duplicates = functionNames.filter((name, index) => functionNames.indexOf(name) !== index);

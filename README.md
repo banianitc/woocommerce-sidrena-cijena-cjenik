@@ -13,11 +13,11 @@ Dodatak je napravljen kao tehnička pomoć vlasnicima internetskih trgovina koje
 
 ## Mogućnosti
 
-- zasebna sidrena cijena za jednostavne proizvode i varijacije
+- zasebna sidrena cijena s datumom za jednostavne proizvode i varijacije
 - početno popunjavanje prazne sidrene cijene trenutačnom redovnom WooCommerce cijenom (bez akcijskog sniženja)
 - postojeće sidrene cijene ne prepisuju se automatski
 - prikaz sidrene cijene na stranici proizvoda, arhivama i drugim WooCommerce popisima
-- prilagodljiv tekst, font, stil, boja i veličina prikaza za računala i mobilne uređaje
+- prilagodljiv tekst s datumom sidrene cijene, font, stil, boja i veličina prikaza za računala i mobilne uređaje
 - javni CSV i XML cjenik sa stalnim URL-ovima
 - ručno i dnevno generiranje cjenika
 - odgođeno osvježavanje nakon promjene proizvoda ili zalihe
@@ -51,6 +51,8 @@ Prilikom početne inicijalizacije prazno polje sidrene cijene automatski se popu
 
 Postojeće sidrene cijene pritom se ne mijenjaju niti automatski prepisuju.
 
+Uz svaku sidrenu cijenu sprema se i datum na koji se odnosi. Proizvodi koji su postojali 10.09.2026. dobivaju taj datum, a proizvodi dodani kasnije dan kad je sidrena cijena početno spremljena. Datum se može ručno promijeniti na proizvodu, varijaciji i u brzom uređivanju. Sidrenim cijenama spremljenima prije uvođenja datuma i dalje se dodjeljuje 10.09.2026.
+
 > [!WARNING]
 > Trenutačna WooCommerce cijena ne mora odgovarati cijeni koja je vrijedila na relevantni datum. Automatski unesene vrijednosti potrebno je provjeriti prema stvarnoj povijesti cijena i obvezama koje se primjenjuju na trgovca.
 
@@ -62,7 +64,7 @@ Sidrena cijena može se zasebno uređivati za:
 
 Izgled prikaza može se prilagoditi kroz postavke dodatka:
 
-- tekst oznake
+- tekst oznake, s oznakama za datum sidrene cijene (npr. `Sidrena cijena na dan %d.%m.%Y.`); ispod polja prikazuje se pregled
 - veličina fonta
 - veličina fonta na mobilnim uređajima
 - vrsta fonta
