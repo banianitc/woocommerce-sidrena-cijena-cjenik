@@ -426,12 +426,16 @@ function sidrena_cijena_quick_edit_script($hook) {
                 }
                 if (postId > 0) {
                     var \$row = $('#post-' + postId);
+                    // Only touch the open editor: the hidden #inline-edit template
+                    // carries the same fields, and moving those in as well would
+                    // submit every input twice, the stale copy last.
+                    var \$editRow = $('#edit-' + postId);
                     var value = \$row.find('.sidrena_cijena_hidden_value').first().text();
-                    $('input.sidrena_cijena_quick_edit_field').val(value);
-                    $('input.sidrena_cijena_quick_edit_date_field').val(\$row.find('.sidrena_cijena_hidden_date').first().text());
+                    \$editRow.find('input.sidrena_cijena_quick_edit_field').val(value);
+                    \$editRow.find('input.sidrena_cijena_quick_edit_date_field').val(\$row.find('.sidrena_cijena_hidden_date').first().text());
 
-                    var \$saleLabel = $('input[name=\"_sale_price\"]').closest('label');
-                    var \$ourField = $('.sidrena-cijena-quick-edit-row');
+                    var \$saleLabel = \$editRow.find('input[name=\"_sale_price\"]').closest('label');
+                    var \$ourField = \$editRow.find('.sidrena-cijena-quick-edit-row');
                     if (\$saleLabel.length && \$ourField.length) {
                         \$saleLabel.after(\$ourField);
                     }
