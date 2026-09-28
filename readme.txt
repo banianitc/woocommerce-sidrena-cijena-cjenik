@@ -4,7 +4,7 @@ Tags: woocommerce, cijena, cjenik, csv, hrvatska
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -85,6 +85,11 @@ Ne. WP-Cron se pokreće prometom na web-stranici. Za zajamčeno izvršenje upotr
 Ne. Dodatak tehnički podržava javno objavljene zahtjeve. Vlasnik trgovine mora provjeriti podatke, poslovna pravila i konačnu usklađenost.
 
 == Changelog ==
+
+= 1.5.0 =
+* Svaka sidrena cijena ima vlastiti datum; noviji proizvodi dobivaju dan početnog spremanja cijene.
+* Tekst oznake je predložak s datumom sidrene cijene (npr. `%d.%m.%Y.`) i pregledom ispod polja.
+* Brzo uređivanje više ne zanemaruje unesenu sidrenu cijenu.
 
 = 1.4.0 =
 * Vrijeme dnevnog generiranja bira se kao sat (00–23) i minuta (00–59).

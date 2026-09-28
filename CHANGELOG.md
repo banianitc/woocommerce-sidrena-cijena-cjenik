@@ -2,6 +2,22 @@
 
 Sve značajne promjene projekta bilježe se u ovoj datoteci.
 
+## [1.5.0] - 2026-09-28
+
+### Dodano
+
+- svaka sidrena cijena ima vlastiti datum, koji se uređuje na proizvodu, varijaciji i u brzom uređivanju; proizvodi koji su postojali 10.09.2026. dobivaju taj datum, a noviji proizvodi dan početnog spremanja cijene
+- sidrene cijene spremljene u ranijim verzijama i dalje vrijede na 10.09.2026.
+
+### Poboljšano
+
+- tekst oznake je predložak s oznakama za datum sidrene cijene (npr. `Sidrena cijena na dan %d.%m.%Y.`), s pregledom ispod polja; datum upisan u postojeći tekst oznake automatski se pretvara u oznake
+- varijabilni proizvod čije varijacije imaju različite datume sidrene cijene ne prikazuje raspon; svaka varijacija prikazuje vlastiti redak nakon odabira
+
+### Ispravljeno
+
+- brzo uređivanje više ne zanemaruje unesenu sidrenu cijenu zbog dvostrukog polja u obrascu
+
 ## [1.4.0] - 2026-09-27
 
 ### Poboljšano
