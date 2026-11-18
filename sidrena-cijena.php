@@ -674,6 +674,19 @@ function sidrena_cijena_render_settings_page() {
 function sidrena_cijena_render_tab_content() {
     $tab_url = admin_url('admin.php?page=sidrena-cijena&tab=sidrena-cijena');
 
+    if (isset($_POST['sidrena_cijena_fill_missing']) && check_admin_referer('sidrena_cijena_fill_missing_action', 'sidrena_cijena_fill_missing_nonce')) {
+        if (empty($_POST['sidrena_cijena_fill_confirm'])) {
+            echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__('Prije pokretanja označite potvrdu da ćete provjeriti unesene iznose.', 'sidrena-cijena') . '</p></div>';
+        } else {
+            $filled = sidrena_cijena_fill_missing_from_current_prices();
+            printf(
+                '<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+                /* translators: %d: number of products and variations */
+                esc_html(sprintf(__('Popunjeno je %d praznih baznih cijena. Postojeće vrijednosti nisu promijenjene.', 'sidrena-cijena'), $filled))
+            );
+        }
+    }
+
     if (isset($_POST['sidrena_cijena_save']) && check_admin_referer('sidrena_cijena_settings_save', 'sidrena_cijena_nonce')) {
         $enabled = isset($_POST[Config::DISPLAY_ENABLED_OPTION]) ? 'yes' : 'no';
         update_option(Config::DISPLAY_ENABLED_OPTION, $enabled);
@@ -883,6 +896,21 @@ function sidrena_cijena_render_tab_content() {
         </form>
 
         <div class="notice notice-warning inline"><p><?php echo esc_html__('Postojeći iznosi ostaju sačuvani. Provjerite cijene koje je ranija verzija dodatka automatski unijela. Ako je na referentni dan vrijedilo sniženje, primijenite članak 3. pravilnika: za skupinu robe s datumom 2. svibnja 2025. uzima se najniža cijena u 30 dana prije početka sniženja, a za ostalu robu i usluge prethodno primijenjena redovna cijena. Prazna polja više se ne popunjavaju automatski.', 'sidrena-cijena'); ?></p></div>
+
+        <hr />
+        <h2><?php echo esc_html__('Popunjavanje praznih baznih cijena', 'sidrena-cijena'); ?></h2>
+        <p><?php echo esc_html__('Za sve objavljene proizvode i varijacije bez bazne cijene kopira trenutačnu redovnu cijenu (bez akcijskog sniženja). Postojeće bazne cijene i izuzeti proizvodi ostaju nepromijenjeni. Alat se pokreće samo ovim gumbom.', 'sidrena-cijena'); ?></p>
+        <div class="notice notice-warning inline" style="margin:12px 0;padding:10px 12px;max-width:900px;">
+            <p style="margin:0;"><?php echo esc_html__('Kopirana redovna cijena odgovara baznoj cijeni samo ako se nije mijenjala od referentnog datuma proizvoda. Provjerite unesene iznose prema vlastitoj evidenciji cijena.', 'sidrena-cijena'); ?></p>
+        </div>
+        <form method="post" action="<?php echo esc_url($tab_url); ?>">
+            <?php wp_nonce_field('sidrena_cijena_fill_missing_action', 'sidrena_cijena_fill_missing_nonce'); ?>
+            <label style="display:block;margin:12px 0;">
+                <input type="checkbox" name="sidrena_cijena_fill_confirm" value="1" />
+                <?php echo esc_html__('Razumijem da moram provjeriti iznose prema evidenciji cijena.', 'sidrena-cijena'); ?>
+            </label>
+            <?php submit_button(__('Popuni prazna polja redovnim cijenama', 'sidrena-cijena'), 'secondary', 'sidrena_cijena_fill_missing'); ?>
+        </form>
     <?php
 }
 
@@ -947,9 +975,50 @@ function sidrena_cijena_get_anchor_status() {
 }
 
 /**
- * Fills only missing anchor prices. Existing values are intentionally preserved.
+ * Fills only missing base prices, from the regular price, and only when the
+ * merchant runs it from the settings page; nothing fills them automatically.
+ * Existing values and exempt products are left alone.
  */
-function sidrena_cijena_fill_missing_from_current_prices() { return 0; }
+function sidrena_cijena_fill_missing_from_current_prices() {
+    if (!current_user_can('manage_woocommerce') || !function_exists('wc_get_products')) {
+        return 0;
+    }
+
+    $filled = 0;
+    foreach (sidrena_cijena_published_product_ids() as $id) {
+        $product = wc_get_product($id);
+        if (!$product || $product->is_type('grouped')) {
+            continue;
+        }
+
+        $targets = $product->is_type('variable') ? $product->get_children() : array($id);
+        foreach ($targets as $target_id) {
+            $target = wc_get_product($target_id);
+            if (!$target || $target->get_status() !== 'publish' || $target->get_meta(Config::ANCHOR_META_KEY, true) !== ''
+                || sidrena_cijena_base_exempt($target, $target_id === $id ? null : $product)) {
+                continue;
+            }
+
+            // The base price is never the discounted price (1583, čl. 3).
+            $regular = $target->get_regular_price('edit');
+            if ($regular === '' || $regular === null) {
+                continue;
+            }
+
+            $target->update_meta_data(Config::ANCHOR_META_KEY, wc_format_decimal($regular));
+            $target->save_meta_data();
+            // save_meta_data() does not fire the product update hooks that clear this cache.
+            sidrena_cijena_clear_anchor_range_cache($target_id);
+            $filled++;
+        }
+    }
+
+    if ($filled > 0 && function_exists('cjenik_queue_refresh')) {
+        cjenik_queue_refresh();
+    }
+
+    return $filled;
+}
 
 function sidrena_cijena_render_help_tab() {
     if (!current_user_can('manage_woocommerce')) { return; }
