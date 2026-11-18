@@ -5,11 +5,11 @@
 
 Besplatan WordPress dodatak za bazne cijene i javni CSV/XML cjenik. Naziv dodatka ostaje **Sidrena Cijena i Cjenik**.
 
-## Verzija 2.2.0 — datum objave kao referentni datum
+## Verzija 2.2.1 — cjenik se objavljuje i uz nepotpune podatke proizvoda
 
-**[Preuzmi instalacijski ZIP 2.2.0](https://github.com/banianitc/woocommerce-sidrena-cijena-cjenik/releases/download/v2.2.0/sidrena-cijena-v2.2.0.zip)** · [Bilješke izdanja](https://github.com/banianitc/woocommerce-sidrena-cijena-cjenik/releases/tag/v2.2.0)
+**[Preuzmi instalacijski ZIP 2.2.1](https://github.com/banianitc/woocommerce-sidrena-cijena-cjenik/releases/download/v2.2.1/sidrena-cijena-v2.2.1.zip)** · [Bilješke izdanja](https://github.com/banianitc/woocommerce-sidrena-cijena-cjenik/releases/tag/v2.2.1)
 
-Verzija 2.2.0 nadograđuje izvornu 2.1.1: proizvod objavljen nakon zadanog datuma automatski dobiva dan objave kao referentni datum, oznaka uz `{datum}` prihvaća i oznake poput `%d.%m.%Y.`, a prazne bazne cijene mogu se jednim gumbom popuniti redovnim cijenama. Trgovine na verziji 1.5.0 ovog forka pri nadogradnji automatski prenose spremljene datume.
+Verzija 2.2.1 cjenik objavljuje i kada pojedinim proizvodima nedostaju podaci: proizvod bez maloprodajne cijene izostavlja se, a nedostajuća bazna cijena ili cijena za jedinicu mjere objavljuju se prazne, uz popis u kartici Cjenik. Verzija 2.2.0 nadograđuje izvornu 2.1.1: proizvod objavljen nakon zadanog datuma automatski dobiva dan objave kao referentni datum, oznaka uz `{datum}` prihvaća i oznake poput `%d.%m.%Y.`, a prazne bazne cijene mogu se jednim gumbom popuniti redovnim cijenama. Trgovine na verziji 1.5.0 ovog forka pri nadogradnji automatski prenose spremljene datume.
 
 Ova verzija mijenja strukturu izvoza. Integracije koje čitaju CSV/XML treba prilagoditi prije nadogradnje. Nakon provjere postojećih iznosa, datuma i novih postavki ponovno generirajte cjenik.
 

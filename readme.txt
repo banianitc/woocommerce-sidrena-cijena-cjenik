@@ -4,7 +4,7 @@ Tags: woocommerce, cijena, cjenik, csv, hrvatska
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,6 +43,10 @@ Pokušaj po završetku zahtjeva koji mijenja proizvod, WP-Cron ponovni pokušaj 
 Ne. Trgovac odgovara za točne povijesne podatke, asortiman, iznimke, poreze i pravodobnu objavu. Potrebna je provjera stvarne trgovine. Detaljne upute i izvori su u README.md repozitorija.
 
 == Changelog ==
+
+= 2.2.1 =
+* Proizvodi bez cijene ili s nepotpunim podacima više ne zaustavljaju objavu cjenika: proizvod bez maloprodajne cijene izostavlja se, a nedostajuća bazna cijena, neto količina ili cijena za jedinicu mjere objavljuju se prazne.
+* Kartica Cjenik prikazuje izostavljene i nepotpune proizvode iz zadnje objave.
 
 = 2.2.0 =
 * Proizvod bez unesenog datuma objavljen nakon zadanog referentnog datuma dobiva dan objave.

@@ -2,6 +2,13 @@
 
 Sve značajne promjene projekta bilježe se u ovoj datoteci.
 
+## [2.2.1] - 2026-11-18
+
+### Ispravljeno
+
+- proizvod bez maloprodajne ili bazne cijene, odnosno bez obvezne neto količine, više ne zaustavlja izradu cijelog cjenika, koji se mora objaviti do 11 sati na dan izmjene (čl. 3. st. 5. Pravilnika 1584): proizvod bez valjane maloprodajne cijene izostavlja se, a nedostajuća ili neispravna bazna cijena, neto količina ili cijena za jedinicu mjere objavljuju se prazne
+- kartica Cjenik prikazuje broj i nazive izostavljenih i nepotpunih proizvoda iz zadnje objave; nedostajući podaci trgovca i dalje zaustavljaju objavu
+
 ## [2.2.0] - 2026-11-18
 
 Izdanje banianitc forka na temelju izvorne verzije 2.1.1.
