@@ -13,8 +13,24 @@ function sidrena_cijena_valid_date($value) {
 function sidrena_cijena_base_date($product, $parent = null) {
     $value = $product ? $product->get_meta(Config::BASE_DATE_META_KEY, true) : '';
     if ($value === '' && $parent) { $value = $parent->get_meta(Config::BASE_DATE_META_KEY, true); }
-    if (!sidrena_cijena_valid_date($value)) { $value = get_option(Config::BASE_DATE_OPTION, '2026-09-10'); }
+    return sidrena_cijena_valid_date($value) ? $value : sidrena_cijena_fallback_base_date($product);
+}
+
+function sidrena_cijena_default_base_date() {
+    $value = get_option(Config::BASE_DATE_OPTION, '2026-09-10');
     return sidrena_cijena_valid_date($value) ? $value : '2026-09-10';
+}
+
+/**
+ * Date used when none is entered. Goods put on offer after the store's
+ * reference date are dated to the day they were put on offer (NN 132/2026,
+ * 1583, čl. 3); WooCommerce sets date_created when a product is published.
+ */
+function sidrena_cijena_fallback_base_date($product) {
+    $default = sidrena_cijena_default_base_date();
+    $created = $product && is_callable(array($product, 'get_date_created')) ? $product->get_date_created() : null;
+    $offered = $created ? wp_date('Y-m-d', $created->getTimestamp()) : '';
+    return $offered > $default ? $offered : $default;
 }
 
 function sidrena_cijena_base_value($product, $parent = null) {
@@ -39,7 +55,7 @@ function sidrena_cijena_label($product = null, $parent = null) {
 }
 
 function sidrena_cijena_default_date_label() {
-    return (new DateTimeImmutable(sidrena_cijena_base_date(null)))->format('d.m.Y.');
+    return (new DateTimeImmutable(sidrena_cijena_default_base_date()))->format('d.m.Y.');
 }
 
 function cjenik_gross_price($product, $price) {
@@ -85,7 +101,9 @@ function sidrena_cijena_compliance_fields() {
     global $product_object;
     $ean = $product_object ? $product_object->get_meta('_cjenik_ean', true) : '';
     if ($ean === '' && $product_object) { $ean = cjenik_get_barcode($product_object); }
-    woocommerce_wp_text_input(array('id' => Config::BASE_DATE_META_KEY, 'type' => 'date', 'label' => __('Datum bazne cijene', 'sidrena-cijena'), 'description' => __('Ako polje ostavite prazno, primjenjuje se zadani datum trgovine. Za novi proizvod unesite datum kada je prvi put ponuđen kupcima, a ne datum posljednje promjene cijene.', 'sidrena-cijena'), 'desc_tip' => true));
+    $fallback = (new DateTimeImmutable(sidrena_cijena_fallback_base_date($product_object)))->format('d.m.Y.');
+    /* translators: %s: date used when the field is empty */
+    woocommerce_wp_text_input(array('id' => Config::BASE_DATE_META_KEY, 'type' => 'date', 'label' => __('Datum bazne cijene', 'sidrena-cijena'), 'description' => sprintf(__('Ako polje ostavite prazno, vrijedi %s: zadani datum trgovine ili dan objave proizvoda, ako je kasniji. Upišite datum samo ako je proizvod stavljen u ponudu nekog drugog dana. Ne upisujte datum posljednje promjene cijene.', 'sidrena-cijena'), $fallback)));
     woocommerce_wp_text_input(array('id' => '_cjenik_net_quantity', 'label' => __('Neto količina u odabranoj jedinici', 'sidrena-cijena'), 'data_type' => 'decimal', 'description' => __('Primjerice, unesite 500 ako je jedinica mjere g ili 0,5 ako je jedinica mjere kg. Za proizvod koji se prodaje po komadu unesite 1. Ne upisujte masu paketa za dostavu.', 'sidrena-cijena'), 'desc_tip' => true));
     woocommerce_wp_text_input(array('id' => '_cjenik_ean', 'value' => $ean, 'label' => __('EAN kod za cjenik', 'sidrena-cijena'), 'description' => __('EAN kod navodi se odvojeno od drugih barkodova. Ako polje ostavite prazno, dodatak će preuzeti postojeći EAN ili GTIN proizvoda, ako je dostupan.', 'sidrena-cijena'), 'desc_tip' => true));
     woocommerce_wp_text_input(array('id' => '_cjenik_general_barcode', 'label' => __('Drugi barkod (ako se razlikuje od EAN koda)', 'sidrena-cijena')));
@@ -114,7 +132,7 @@ function sidrena_cijena_save_compliance_fields($id) {
 
 add_action('woocommerce_product_after_variable_attributes', 'sidrena_cijena_variation_compliance_fields', 20, 3);
 function sidrena_cijena_variation_compliance_fields($loop, $data, $variation) {
-    foreach (array(Config::BASE_DATE_META_KEY => 'Datum bazne cijene (prazno polje preuzima datum glavnog proizvoda)', '_cjenik_net_quantity' => 'Neto količina (prazno polje preuzima količinu glavnog proizvoda)', '_cjenik_ean' => 'EAN barkod', '_cjenik_general_barcode' => 'Opći barkod') as $key => $label) {
+    foreach (array(Config::BASE_DATE_META_KEY => 'Datum bazne cijene (prazno polje preuzima datum glavnog proizvoda, a bez njega zadani datum trgovine ili dan objave varijacije ako je kasniji)', '_cjenik_net_quantity' => 'Neto količina (prazno polje preuzima količinu glavnog proizvoda)', '_cjenik_ean' => 'EAN barkod', '_cjenik_general_barcode' => 'Opći barkod') as $key => $label) {
         woocommerce_wp_text_input(array('id' => $key . '_' . $loop, 'name' => $key . '[' . $loop . ']', 'type' => $key === Config::BASE_DATE_META_KEY ? 'date' : 'text', 'label' => __($label, 'sidrena-cijena'), 'value' => get_post_meta($variation->ID, $key, true), 'wrapper_class' => 'form-row form-row-full'));
     }
     woocommerce_wp_select(array('id' => '_base_price_exempt_' . $loop, 'name' => '_base_price_exempt[' . $loop . ']', 'label' => __('Izuzeće varijacije od obveze', 'sidrena-cijena'), 'value' => get_post_meta($variation->ID, '_base_price_exempt', true), 'options' => array('' => 'Prema postavci glavnog proizvoda', 'no' => 'Nije izuzeta', 'yes' => 'Izuzeta — bez prikaza bazne cijene i izvoza u cjenik'), 'wrapper_class' => 'form-row form-row-full'));

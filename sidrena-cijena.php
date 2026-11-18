@@ -162,6 +162,12 @@ function sidrena_cijena_quick_edit_field() {
                 <input type="text" name="<?php echo esc_attr(Config::ANCHOR_META_KEY); ?>" class="text sidrena_cijena_quick_edit_field" value="" />
             </span>
         </label>
+        <label class="alignleft" style="width:100%;">
+            <span class="title"><?php echo esc_html__('Datum bazne cijene', 'sidrena-cijena'); ?></span>
+            <span class="input-text-wrap">
+                <input type="date" name="<?php echo esc_attr(Config::BASE_DATE_META_KEY); ?>" class="text sidrena_cijena_quick_edit_date_field" value="" />
+            </span>
+        </label>
     </div>
     <?php
 }
@@ -171,6 +177,7 @@ function sidrena_cijena_output_hidden_value($column, $post_id) {
     if ($column === 'price') {
         $value = get_post_meta($post_id, Config::ANCHOR_META_KEY, true);
         echo '<div class="sidrena_cijena_hidden_value" style="display:none;">' . esc_html($value) . '</div>';
+        echo '<div class="sidrena_cijena_hidden_date" style="display:none;">' . esc_html(get_post_meta($post_id, Config::BASE_DATE_META_KEY, true)) . '</div>';
     }
 }
 
@@ -188,6 +195,14 @@ function sidrena_cijena_quick_edit_save($product) {
             delete_post_meta($post_id, Config::ANCHOR_META_KEY);
         } else {
             update_post_meta($post_id, Config::ANCHOR_META_KEY, wc_format_decimal($raw));
+        }
+    }
+
+    // Empty means the fallback date; an invalid value leaves the stored one alone.
+    if (isset($_POST[Config::BASE_DATE_META_KEY])) {
+        $date = sanitize_text_field(wp_unslash($_POST[Config::BASE_DATE_META_KEY]));
+        if ($date === '' || sidrena_cijena_valid_date($date)) {
+            update_post_meta($product->get_id(), Config::BASE_DATE_META_KEY, $date);
         }
     }
 }
@@ -220,6 +235,7 @@ function sidrena_cijena_quick_edit_script($hook) {
                     var \$editRow = $('#edit-' + postId);
                     var value = \$row.find('.sidrena_cijena_hidden_value').first().text();
                     \$editRow.find('input.sidrena_cijena_quick_edit_field').val(value);
+                    \$editRow.find('input.sidrena_cijena_quick_edit_date_field').val(\$row.find('.sidrena_cijena_hidden_date').first().text());
 
                     var \$saleLabel = \$editRow.find('input[name=\"_sale_price\"]').closest('label');
                     var \$ourField = \$editRow.find('.sidrena-cijena-quick-edit-row');

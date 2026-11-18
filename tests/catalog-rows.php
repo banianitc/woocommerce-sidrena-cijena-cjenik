@@ -56,6 +56,8 @@ final class CatalogTestProduct
     private $visibility;
     private $status;
     public $meta = array();
+    /** Publish day (Y-m-d) WooCommerce records as date_created; null for drafts. */
+    public $created = null;
 
     public function __construct($id, $type = 'simple', $price = '4.50', $children = array(), $override = '', $visibility = 'visible', $status = 'publish') {
         $this->id = $id;
@@ -74,6 +76,7 @@ final class CatalogTestProduct
     public function get_meta($key, $single = true) { return $this->meta[$key] ?? ($key === CJENIK_VISIBILITY_META_KEY ? $this->override : ''); }
     public function update_meta_data($key, $value) { $this->meta[$key] = $value; }
     public function get_parent_id() { return 0; }
+    public function get_date_created() { return $this->created ? new DateTimeImmutable($this->created . ' 12:00:00', new DateTimeZone('UTC')) : null; }
     public function get_regular_price($context = 'view') { return $this->price; }
     public function get_name() { return 'Product ' . $this->id; }
     public function get_sku() { return (string) $this->id; }
