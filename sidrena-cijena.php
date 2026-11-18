@@ -106,6 +106,51 @@ function sidrena_cijena_font_style_choices() {
     );
 }
 
+/**
+ * The 1.5.0 fork stored the base date as _anchor_price_date. Copy it to the
+ * key this version reads wherever no base date was entered. The old rows are
+ * left in place so a rollback to 1.5.0 still finds them.
+ */
+add_action('plugins_loaded', 'sidrena_cijena_maybe_upgrade');
+function sidrena_cijena_maybe_upgrade() {
+    if ((int) get_option(Config::SCHEMA_VERSION_OPTION, 0) >= Config::SCHEMA_VERSION) {
+        return;
+    }
+
+    global $wpdb;
+    // An empty _base_price_date is what saving the product form with no date stores.
+    $updated = $wpdb->query($wpdb->prepare(
+        "UPDATE {$wpdb->postmeta} base JOIN {$wpdb->postmeta} legacy ON legacy.post_id = base.post_id AND legacy.meta_key = %s
+         SET base.meta_value = legacy.meta_value
+         WHERE base.meta_key = %s AND base.meta_value = '' AND legacy.meta_value <> ''",
+        Config::LEGACY_ANCHOR_DATE_META_KEY,
+        Config::BASE_DATE_META_KEY
+    ));
+    $inserted = $wpdb->query($wpdb->prepare(
+        "INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value)
+         SELECT legacy.post_id, %s, MAX(legacy.meta_value) FROM {$wpdb->postmeta} legacy
+         WHERE legacy.meta_key = %s AND legacy.meta_value <> ''
+           AND NOT EXISTS (SELECT 1 FROM {$wpdb->postmeta} base WHERE base.post_id = legacy.post_id AND base.meta_key = %s)
+         GROUP BY legacy.post_id",
+        Config::BASE_DATE_META_KEY,
+        Config::LEGACY_ANCHOR_DATE_META_KEY,
+        Config::BASE_DATE_META_KEY
+    ));
+    if ($updated === false || $inserted === false) {
+        // Leave the version unset so the next request retries.
+        return;
+    }
+
+    if ($updated + $inserted > 0) {
+        if (function_exists('wp_cache_supports') && wp_cache_supports('flush_group')) {
+            wp_cache_flush_group('post_meta');
+        } else {
+            wp_cache_flush();
+        }
+    }
+    update_option(Config::SCHEMA_VERSION_OPTION, Config::SCHEMA_VERSION);
+}
+
 add_action('plugins_loaded', 'sidrena_cijena_check_woocommerce');
 function sidrena_cijena_check_woocommerce() {
     if (!class_exists('WooCommerce')) {
