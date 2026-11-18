@@ -810,7 +810,7 @@ function sidrena_cijena_get_anchor_status() {
         $targets = $product->is_type('variable') ? $product->get_children() : array($id);
         foreach ($targets as $target_id) {
             $target = wc_get_product($target_id);
-            if (!$target || $target->get_status() !== 'publish') {
+            if (!$target || $target->get_status() !== 'publish' || sidrena_cijena_base_exempt($target, $target_id === $id ? null : $product)) {
                 continue;
             }
             $status['total']++;
