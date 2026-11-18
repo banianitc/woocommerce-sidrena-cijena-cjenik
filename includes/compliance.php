@@ -46,12 +46,33 @@ function sidrena_cijena_base_exempt($product, $parent = null) {
     return $value === 'yes';
 }
 
-function sidrena_cijena_label($product = null, $parent = null) {
+function sidrena_cijena_label_template() {
     $label = get_option(Config::LABEL_OPTION, Config::DEFAULT_LABEL);
-    // Migrate only the known previous default. Preserve merchant-written labels.
-    if ($label === '' || $label === 'Sidrena cijena na dan 10.09.2026.') { $label = Config::DEFAULT_LABEL; }
-    $date = DateTimeImmutable::createFromFormat('!Y-m-d', sidrena_cijena_base_date($product, $parent));
-    return str_replace('{datum}', $date->format('d.m.Y.'), $label);
+    // Migrate only the known previous defaults. Preserve merchant-written labels.
+    if (!is_string($label) || $label === '' || in_array($label, Config::LEGACY_DEFAULT_LABELS, true)) { $label = Config::DEFAULT_LABEL; }
+    return $label;
+}
+
+function sidrena_cijena_label($product = null, $parent = null) {
+    return sidrena_cijena_format_label(sidrena_cijena_label_template(), sidrena_cijena_base_date($product, $parent));
+}
+
+/**
+ * {datum} becomes the date as d.m.Y.; %X becomes the date formatted with the
+ * PHP date character X (only those in Config::LABEL_DATE_TOKENS), and %% is a
+ * literal percent sign.
+ */
+function sidrena_cijena_format_label($label, $date) {
+    $date = DateTimeImmutable::createFromFormat('!Y-m-d', $date, new DateTimeZone('UTC'));
+    $label = str_replace('{datum}', $date->format('d.m.Y.'), $label);
+    $utc = new DateTimeZone('UTC');
+
+    return preg_replace_callback('/%([%a-zA-Z])/', function ($match) use ($date, $utc) {
+        if ($match[1] === '%') { return '%'; }
+        if (strpos(Config::LABEL_DATE_TOKENS, $match[1]) === false) { return $match[0]; }
+        // wp_date() localises month and weekday names.
+        return wp_date($match[1], $date->getTimestamp(), $utc);
+    }, $label);
 }
 
 function sidrena_cijena_default_date_label() {

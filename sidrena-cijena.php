@@ -252,11 +252,7 @@ function sidrena_cijena_quick_edit_script($hook) {
 
 // 3. Prikaz ispod cijene - pokriva stranicu proizvoda, kategorije/shop, related/upsell/cross-sell, widgete itd.
 function sidrena_cijena_get_style_settings() {
-    $label = get_option(Config::LABEL_OPTION, Config::DEFAULT_LABEL);
-    if ($label === 'Sidrena cijena na dan 10.09.2026.') { $label = Config::DEFAULT_LABEL; }
-    if ($label === '') {
-        $label = Config::DEFAULT_LABEL;
-    }
+    $label = sidrena_cijena_label_template();
 
     $font_size = (int) get_option(Config::FONT_SIZE_OPTION, Config::DEFAULT_FONT_SIZE);
     if ($font_size < 8) {
@@ -496,6 +492,7 @@ function sidrena_cijena_add_menu() {
 
         wp_enqueue_style('wp-color-picker');
         wp_enqueue_script('wp-color-picker');
+        wp_add_inline_script('wp-color-picker', sidrena_cijena_label_preview_script(), 'before');
 
         $js = "
             (function($){
@@ -503,7 +500,8 @@ function sidrena_cijena_add_menu() {
 
                 function sidrena_cijena_update_preview() {
                     setTimeout(function() {
-                        var label = ($('#sidrena-cijena-label').val() || 'Bazna cijena na dan {datum}').replace('{datum}', ($('#sidrena-base-date').val() || '2026-09-10').split('-').reverse().join('.') + '.');
+                        var label = sidrenaCijenaFormatLabel($('#sidrena-cijena-label').val() || sidrenaCijenaLabel.defaultLabel, $('#sidrena-base-date').val() || '2026-09-10');
+                        $('#sidrena-cijena-label-preview').text(label);
                         var size = $('#sidrena-cijena-font-size').val() || 12;
                         var sizeMobile = $('#sidrena-cijena-font-size-mobile').val() || 11;
                         var family = $('#sidrena-cijena-font-family').val() || 'inherit';
@@ -531,6 +529,64 @@ function sidrena_cijena_add_menu() {
 
         wp_add_inline_script('wp-color-picker', $js);
     });
+}
+
+/**
+ * Browser twin of sidrena_cijena_format_label() for the settings preview, with
+ * month and weekday names from the site locale.
+ */
+function sidrena_cijena_label_preview_script() {
+    global $wp_locale;
+
+    $months = array();
+    $months_short = array();
+    for ($m = 1; $m <= 12; $m++) {
+        $months[] = $wp_locale->get_month($m);
+        $months_short[] = $wp_locale->get_month_abbrev($wp_locale->get_month($m));
+    }
+    $weekdays = array();
+    $weekdays_short = array();
+    for ($d = 0; $d <= 6; $d++) {
+        $weekdays[] = $wp_locale->get_weekday($d);
+        $weekdays_short[] = $wp_locale->get_weekday_abbrev($wp_locale->get_weekday($d));
+    }
+
+    $data = 'var sidrenaCijenaLabel = ' . wp_json_encode(array(
+        'defaultLabel'  => Config::DEFAULT_LABEL,
+        'tokens'        => Config::LABEL_DATE_TOKENS,
+        'months'        => $months,
+        'monthsShort'   => $months_short,
+        'weekdays'      => $weekdays,
+        'weekdaysShort' => $weekdays_short,
+    )) . ';';
+
+    return $data . <<<'JS'
+
+function sidrenaCijenaFormatLabel(label, ymd) {
+    var p = ymd.split('-'), y = +p[0], m = +p[1], d = +p[2];
+    var date = new Date(Date.UTC(y, m - 1, d));
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    var leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    var w = date.getUTCDay();
+    var dayOfYear = Math.round((date - Date.UTC(y, 0, 1)) / 86400000);
+    // ISO 8601 week: the week belongs to the year of its Thursday.
+    var thursday = new Date(Date.UTC(y, m - 1, d + 4 - (w || 7)));
+    var isoYear = thursday.getUTCFullYear();
+    var week = Math.ceil(((thursday - Date.UTC(isoYear, 0, 1)) / 86400000 + 1) / 7);
+    var suffix = (d % 10 === 1 && d !== 11) ? 'st' : (d % 10 === 2 && d !== 12) ? 'nd' : (d % 10 === 3 && d !== 13) ? 'rd' : 'th';
+    var values = {
+        d: pad(d), D: sidrenaCijenaLabel.weekdaysShort[w], j: d, l: sidrenaCijenaLabel.weekdays[w],
+        N: w || 7, S: suffix, w: w, z: dayOfYear, W: pad(week),
+        F: sidrenaCijenaLabel.months[m - 1], m: pad(m), M: sidrenaCijenaLabel.monthsShort[m - 1], n: m,
+        t: new Date(Date.UTC(y, m, 0)).getUTCDate(), L: leap ? 1 : 0, o: isoYear, Y: y, y: pad(y % 100)
+    };
+    label = label.split('{datum}').join(pad(d) + '.' + pad(m) + '.' + y + '.');
+    return label.replace(/%([%a-zA-Z])/g, function (match, token) {
+        if (token === '%') { return '%'; }
+        return sidrenaCijenaLabel.tokens.indexOf(token) === -1 ? match : String(values[token]);
+    });
+}
+JS;
 }
 
 function sidrena_cijena_render_settings_page() {
@@ -578,7 +634,9 @@ function sidrena_cijena_render_tab_content() {
         update_option(Config::DISPLAY_ENABLED_OPTION, $enabled);
         if (isset($_POST['sidrena_cijena_review_confirm'])) { update_option('sidrena_cijena_compliance_reviewed', '2.0.0'); }
 
-        $label = isset($_POST[Config::LABEL_OPTION]) ? sanitize_text_field(wp_unslash($_POST[Config::LABEL_OPTION])) : '';
+        // sanitize_text_field() would strip date tokens that look like
+        // percent-encoded octets, such as %d followed by a hex digit.
+        $label = isset($_POST[Config::LABEL_OPTION]) ? trim(preg_replace('/\s+/', ' ', wp_strip_all_tags(wp_unslash($_POST[Config::LABEL_OPTION])))) : '';
         if ($label === '') {
             $label = Config::DEFAULT_LABEL;
         }
@@ -674,7 +732,9 @@ function sidrena_cijena_render_tab_content() {
                     </th>
                     <td>
                         <input type="text" id="sidrena-cijena-label" name="<?php echo esc_attr(Config::LABEL_OPTION); ?>" value="<?php echo esc_attr($label); ?>" class="regular-text" />
-                        <p class="description"><?php echo esc_html__('Upišite oznaku koja će stajati uz iznos, primjerice Bazna cijena na dan {datum}. Dodatak će oznaku {datum} zamijeniti referentnim datumom proizvoda. Taj se datum ne mijenja svakodnevno.', 'sidrena-cijena'); ?></p>
+                        <p class="description"><?php echo esc_html__('Pregled za zadani datum:', 'sidrena-cijena'); ?> <strong id="sidrena-cijena-label-preview"></strong></p>
+                        <p class="description"><?php echo esc_html__('Upišite oznaku koja će stajati uz iznos, primjerice Bazna cijena na dan {datum}. Dodatak će oznaku {datum} zamijeniti referentnim datumom proizvoda (npr. 10.09.2026.). Taj se datum ne mijenja svakodnevno.', 'sidrena-cijena'); ?></p>
+                        <p class="description"><?php echo esc_html__('Za drugačiji zapis datuma koristite oznake: %d dan (01–31), %j dan bez vodeće nule, %m mjesec (01–12), %n mjesec bez vodeće nule, %F naziv mjeseca, %Y godina (2026), %y godina (26), %% znak postotka. Primjer: Bazna cijena na dan %j. %n. %Y.', 'sidrena-cijena'); ?></p>
                     </td>
                 </tr>
                 <tr>
@@ -684,7 +744,7 @@ function sidrena_cijena_render_tab_content() {
                             <option value="2026-09-10" <?php selected(get_option(Config::BASE_DATE_OPTION, '2026-09-10'), '2026-09-10'); ?>>10.09.2026. — ostala roba i usluge</option>
                             <option value="2025-05-02" <?php selected(get_option(Config::BASE_DATE_OPTION, '2026-09-10'), '2025-05-02'); ?>>02.05.2025. — hrana, piće, kozmetika, čišćenje, toaletne potrepštine i kućanstvo</option>
                         </select>
-                        <p class="description">Ako se referentni datum razlikuje od zadanoga, unesite ga u kartici Inventar proizvoda ili u postavkama varijacije. Za novi proizvod unesite datum kada je prvi put ponuđen kupcima.</p>
+                        <p class="description">Proizvod objavljen nakon zadanog datuma automatski dobiva dan objave kao referentni datum. Ako se referentni datum razlikuje, unesite ga u kartici Inventar proizvoda ili u postavkama varijacije.</p>
                     </td>
                 </tr>
                 <tr>

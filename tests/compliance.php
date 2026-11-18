@@ -30,6 +30,8 @@ $test_options['sidrena_cijena_label_text'] = 'Referentna cijena ({datum})';
 check(sidrena_cijena_label($item) === 'Referentna cijena (15.11.2026.)', 'Merchant-defined label wording must survive the upgrade.');
 $test_options['sidrena_cijena_label_text'] = 'Sidrena cijena na dan 10.09.2026.';
 check(sidrena_cijena_label($item) === 'Bazna cijena na dan 15.11.2026.', 'Only the former stock label must migrate to the new dated template.');
+$test_options['sidrena_cijena_label_text'] = 'Cijena %j. %n. %y. (%d%m) {datum} 100%% %Q %H';
+check(sidrena_cijena_label($item) === 'Cijena 15. 11. 26. (1511) 15.11.2026. 100% %Q %H', 'Date tokens and {datum} must both resolve; unknown tokens stay literal.');
 unset($test_options['sidrena_cijena_label_text']);
 $parent->meta['_base_price_date'] = '2025-05-02';
 check(sidrena_cijena_base_date($item, $parent) === '2026-11-15', 'A variation date must override its parent date.');

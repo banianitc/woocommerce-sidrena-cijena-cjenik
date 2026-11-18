@@ -26,6 +26,10 @@ final class Config
 
     const MOBILE_BREAKPOINT = 768;
     const DEFAULT_LABEL = 'Bazna cijena na dan {datum}';
+    /** Stock labels of earlier versions, replaced by DEFAULT_LABEL. */
+    const LEGACY_DEFAULT_LABELS = array('Sidrena cijena na dan 10.09.2026.');
+    /** PHP date() characters that may follow % in the label. */
+    const LABEL_DATE_TOKENS = 'dDjlNSwzWFmMntLoYy';
     const DEFAULT_FONT_SIZE = 12;
     const DEFAULT_MOBILE_FONT_SIZE = 11;
     const DEFAULT_FONT_FAMILY = 'inherit';
