@@ -23,6 +23,7 @@ define('CJENIK_STORAGE_NUMBER_OPTION', 'sidrena_cijena_cjenik_storage_number');
 define('CJENIK_LAST_GENERATED_OPTION', 'sidrena_cijena_cjenik_last_generated');
 define('CJENIK_LAST_FILES_OPTION', 'sidrena_cijena_cjenik_last_files');
 define('CJENIK_LAST_ERROR_OPTION', 'sidrena_cijena_cjenik_last_error');
+define('CJENIK_LAST_WARNINGS_OPTION', 'sidrena_cijena_cjenik_last_warnings');
 define('CJENIK_DB_VERSION_OPTION', 'sidrena_cijena_cjenik_db_version');
 define('CJENIK_DIRTY_OPTION', 'sidrena_cijena_cjenik_dirty_since');
 define('CJENIK_GENERATION_LOCK', 'sidrena_cijena_cjenik_generation_lock');
@@ -818,6 +819,39 @@ function cjenik_column_label($column) {
     return isset($labels[$column]) ? __($labels[$column], 'sidrena-cijena') : $column;
 }
 
+/**
+ * What the last published price list left out or published empty, with the
+ * first few product names, so the merchant can complete the data.
+ */
+function cjenik_render_last_warnings() {
+    $warnings = get_option(CJENIK_LAST_WARNINGS_OPTION, array());
+    if (!is_array($warnings) || !$warnings) {
+        return;
+    }
+
+    $messages = array(
+        'skipped_no_price'   => __('Izostavljeno jer nemaju maloprodajnu cijenu: %d', 'sidrena-cijena'),
+        'missing_base_price' => __('Objavljeno s praznom baznom cijenom: %d', 'sidrena-cijena'),
+        'missing_unit_price' => __('Objavljeno bez obvezne cijene za jedinicu mjere (nedostaje neto količina): %d', 'sidrena-cijena'),
+        'invalid_quantity'   => __('Objavljeno bez neto količine jer nije pozitivan broj: %d', 'sidrena-cijena'),
+    );
+    echo '<div class="notice notice-warning inline" style="margin:0 0 12px;padding:10px 12px;"><p style="margin:0 0 6px;"><strong>' . esc_html__('Posljednji cjenik objavljen je s nepotpunim podacima.', 'sidrena-cijena') . '</strong></p><ul style="margin:0 0 0 18px;list-style:disc;">';
+    foreach ($messages as $kind => $message) {
+        if (empty($warnings[$kind]['count'])) {
+            continue;
+        }
+        $names = isset($warnings[$kind]['names']) ? (array) $warnings[$kind]['names'] : array();
+        $more = (int) $warnings[$kind]['count'] - count($names);
+        printf(
+            '<li>%s%s</li>',
+            /* translators: %d: number of products and variations */
+            esc_html(sprintf($message, (int) $warnings[$kind]['count'])),
+            $names ? esc_html(' — ' . implode(', ', $names) . ($more > 0 ? sprintf(__(' i još %d', 'sidrena-cijena'), $more) : '')) : ''
+        );
+    }
+    echo '</ul></div>';
+}
+
 register_activation_hook(dirname(__DIR__) . '/sidrena-cijena.php', 'cjenik_activate');
 function cjenik_activate() {
     cjenik_register_rewrite_rule();
@@ -1155,7 +1189,7 @@ function cjenik_render_tab_content() {
         <?php
         $readiness_cards = array(
             array(__('Stavki u cjeniku', 'sidrena-cijena'), $readiness['total'], false),
-            array(__('Bez maloprodajne cijene', 'sidrena-cijena'), $readiness['missing_price'], true),
+            array(__('Bez maloprodajne cijene (izostavljaju se)', 'sidrena-cijena'), $readiness['missing_price'], true),
             array(__('Bez bazne cijene', 'sidrena-cijena'), $readiness['missing_anchor'], true),
             array(__('Bez šifre', 'sidrena-cijena'), $readiness['missing_sku'], true),
             array(__('Bez robne marke', 'sidrena-cijena'), $readiness['missing_brand'], true),
@@ -1173,7 +1207,7 @@ function cjenik_render_tab_content() {
     <?php if (!$readiness['settings_ok']) : ?>
         <div class="notice notice-error inline" style="margin:0 0 16px;padding:10px 12px;"><p style="margin:0;"><?php echo esc_html__('Prije objave dopunite identifikacijski broj trgovca, podatke o prodajnom mjestu, broj pohrane i adresu.', 'sidrena-cijena'); ?></p></div>
     <?php elseif ($readiness['missing_price'] || $readiness['missing_anchor'] || $readiness['missing_sku']) : ?>
-        <div class="notice notice-warning inline" style="margin:0 0 16px;padding:10px 12px;"><p style="margin:0;"><?php echo esc_html__('Cjenik se ne može objaviti dok nisu unesene maloprodajne i bazne cijene. Šifru, robnu marku i barkod unesite ako su primjenjivi.', 'sidrena-cijena'); ?></p></div>
+        <div class="notice notice-warning inline" style="margin:0 0 16px;padding:10px 12px;"><p style="margin:0;"><?php echo esc_html__('Cjenik se objavljuje i s nepotpunim podacima: proizvodi bez maloprodajne cijene izostavljaju se, a proizvodi bez bazne cijene objavljuju se s praznom baznom cijenom. Dopunite nedostajuće cijene prema evidenciji. Šifru, robnu marku i barkod unesite ako su primjenjivi.', 'sidrena-cijena'); ?></p></div>
     <?php else : ?>
         <div class="notice notice-success inline" style="margin:0 0 16px;padding:10px 12px;"><p style="margin:0;"><?php echo esc_html__('Osnovni obvezni podaci su uneseni. Prije objave provjerite njihovu točnost.', 'sidrena-cijena'); ?></p></div>
     <?php endif; ?>
@@ -1184,6 +1218,7 @@ function cjenik_render_tab_content() {
     <?php if ($last_error) : ?>
         <div class="notice notice-error inline" style="margin:0 0 12px;padding:10px 12px;"><p style="margin:0;"><strong><?php echo esc_html__('Posljednja pogreška:', 'sidrena-cijena'); ?></strong> <?php echo esc_html($last_error); ?></p></div>
     <?php endif; ?>
+    <?php cjenik_render_last_warnings(); ?>
     <?php if ($last_generated) : ?>
         <p>
             <?php

@@ -9,6 +9,8 @@ if (!defined('ABSPATH')) {
 final class CatalogEngine
 {
     const PAGE_SIZE = 100;
+    /** Product names kept per warning kind for the settings page. */
+    const WARNING_NAME_LIMIT = 10;
 
     private $lock;
     private $dirty;
@@ -140,6 +142,51 @@ final class CatalogEngine
         return $report;
     }
 
+    /**
+     * Gaps in one product's data must not hold back the whole price list,
+     * which has to be republished by 11:00 on the day prices change (1584,
+     * čl. 3 st. 5). A product without a valid retail price has no price in
+     * force and is left out. Any other missing or invalid value is published
+     * empty, never guessed. Each case is recorded in $warnings by kind, with
+     * a count and the first few product names. Returns null to skip the row.
+     */
+    public static function prepareRow(array $row, array &$warnings)
+    {
+        $note = function ($kind) use (&$warnings, $row) {
+            if (!isset($warnings[$kind])) {
+                $warnings[$kind] = array('count' => 0, 'names' => array());
+            }
+            $warnings[$kind]['count']++;
+            if (count($warnings[$kind]['names']) < self::WARNING_NAME_LIMIT) {
+                $warnings[$kind]['names'][] = $row['naziv'];
+            }
+        };
+        $invalid = function ($value) {
+            return $value === '' || !is_numeric($value) || (float) $value < 0;
+        };
+
+        if ($invalid($row['maloprodajna_cijena'])) {
+            $note('skipped_no_price');
+            return null;
+        }
+        if ($invalid($row['bazna_cijena'])) {
+            $row['bazna_cijena'] = '';
+            $note('missing_base_price');
+        }
+        if (cjenik_catalog_kind() === 'roba') {
+            if ($row['neto_kolicina'] !== '' && (!is_numeric($row['neto_kolicina']) || (float) $row['neto_kolicina'] <= 0)) {
+                $row['neto_kolicina'] = '';
+                $row['cijena_po_jedinici'] = '';
+                $note('invalid_quantity');
+            } elseif (!empty($row['_unit_required']) && ($row['neto_kolicina'] === '' || $row['cijena_po_jedinici'] === '')) {
+                $row['cijena_po_jedinici'] = '';
+                $note('missing_unit_price');
+            }
+        }
+
+        return $row;
+    }
+
     public function generate()
     {
         if (!$this->lock->acquire()) {
@@ -177,15 +224,11 @@ final class CatalogEngine
 
             $rowCount = 0;
             $lastLockRefresh = time();
+            $warnings = array();
             foreach ($this->rows() as $row) {
-                if ($row['maloprodajna_cijena'] === '' || $row['bazna_cijena'] === '' || !is_numeric($row['maloprodajna_cijena']) || !is_numeric($row['bazna_cijena']) || (float) $row['maloprodajna_cijena'] < 0 || (float) $row['bazna_cijena'] < 0) {
-                    throw new \RuntimeException('Nedostaje maloprodajna ili bazna cijena za: ' . $row['naziv'] . '. Dopunite podatke prema evidenciji; zadnji cjenik ostaje objavljen.');
-                }
-                if (cjenik_catalog_kind() === 'roba' && !empty($row['_unit_required']) && ($row['neto_kolicina'] === '' || $row['cijena_po_jedinici'] === '')) {
-                    throw new \RuntimeException('Nedostaje neto količina ili cijena za jedinicu mjere za proizvod: ' . $row['naziv']);
-                }
-                if (cjenik_catalog_kind() === 'roba' && $row['neto_kolicina'] !== '' && (!is_numeric($row['neto_kolicina']) || (float) $row['neto_kolicina'] <= 0)) {
-                    throw new \RuntimeException('Neto količina mora biti pozitivan broj. Provjerite proizvod: ' . $row['naziv']);
+                $row = self::prepareRow($row, $warnings);
+                if ($row === null) {
+                    continue;
                 }
                 foreach ($writers as $writer) {
                     $writer->writeRow($row);
@@ -238,6 +281,11 @@ final class CatalogEngine
             update_option(CJENIK_LAST_GENERATED_OPTION, time());
             update_option(CJENIK_LAST_FILES_OPTION, $files, false);
             delete_option(CJENIK_LAST_ERROR_OPTION);
+            if ($warnings) {
+                update_option(CJENIK_LAST_WARNINGS_OPTION, $warnings, false);
+            } else {
+                delete_option(CJENIK_LAST_WARNINGS_OPTION);
+            }
 
             $this->dirty->clearIfUnchanged($dirtySnapshot);
             if ($this->dirty->isDirty()) {

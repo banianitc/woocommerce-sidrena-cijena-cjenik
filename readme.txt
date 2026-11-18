@@ -14,7 +14,7 @@ Bazne cijene i javni CSV/XML cjenik prema pravilnicima NN 132/2026.
 
 Naziv dodatka ostaje Sidrena Cijena i Cjenik. Od verzije 2.0 možete odrediti referentni datum za svaki proizvod i varijaciju te prilagoditi oznaku pomoću zapisa {datum} ili oznaka poput %d.%m.%Y. Proizvod bez unesenog datuma objavljen nakon zadanog datuma dobiva dan objave. Izvoz podržava neto količinu, zasebni EAN kod te maloprodajne cijene s PDV-om i cijene za jedinicu mjere. Roba i usluge izvoze se u odgovarajućem redoslijedu stupaca.
 
-Postojeći iznosi ostaju sačuvani. Ranije automatski kopirane cijene provjerite prema vlastitoj evidenciji. Nepoznate bazne cijene više se ne zamjenjuju aktualnim cijenama. Bez obveznih podataka novo generiranje ne uspijeva, a zadnji cjenik ostaje objavljen.
+Postojeći iznosi ostaju sačuvani. Ranije automatski kopirane cijene provjerite prema vlastitoj evidenciji. Nepoznate bazne cijene više se ne zamjenjuju aktualnim cijenama. Bez podataka trgovca novo generiranje ne uspijeva, a zadnji cjenik ostaje objavljen. Proizvod bez maloprodajne cijene izostavlja se iz cjenika, a nedostajuća bazna cijena objavljuje se prazna, uz upozorenje u administraciji.
 
 == Installation ==
 

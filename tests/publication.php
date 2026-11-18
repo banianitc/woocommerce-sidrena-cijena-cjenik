@@ -62,17 +62,46 @@ try {
 
     $filesBeforeFailure = get_option(CJENIK_LAST_FILES_OPTION);
     $currentBeforeFailure = file_get_contents($directory . '/' . $second['csv_file']);
-    unset($products[1]->meta['_anchor_price']);
-    check($engine->generate() === false, 'A product lacking a historical base value must block publication.');
+    unset($test_options['sidrena_cijena_cjenik_trader_id']);
+    check($engine->generate() === false, 'Missing merchant identification must block publication.');
     check(get_option(CJENIK_LAST_FILES_OPTION) === $filesBeforeFailure, 'A failed generation must not replace the published file pointers.');
     check(file_get_contents($directory . '/' . $second['csv_file']) === $currentBeforeFailure, 'A failed generation must preserve the last complete public catalog.');
     check(get_option(CJENIK_GENERATION_LOCK, false) === false, 'A failed generation must release its generation lock.');
+    $test_options['sidrena_cijena_cjenik_trader_id'] = '12345678901';
 
-    $products[1]->meta['_anchor_price'] = '-1.00';
-    check((new CatalogEngine())->generate() === false, 'A negative historical price must not be published.');
-    check(file_get_contents($directory . '/' . $second['csv_file']) === $currentBeforeFailure, 'Invalid negative data must not damage the current catalog.');
+    // Gaps in single products publish the rest of the price list, with warnings.
+    unset($products[1]->meta['_anchor_price']);
+    $products[2] = new CatalogTestProduct(2, 'simple', '');
+    $products[2]->meta['_anchor_price'] = '7.00';
+    $products[3] = new CatalogTestProduct(3, 'simple', '5.00');
+    $products[3]->meta['_anchor_price'] = '-1.00';
+    $products[4] = new CatalogTestProduct(4, 'simple', '3.00');
+    $products[4]->meta['_anchor_price'] = '3.00';
+    $products[4]->meta[CJENIK_UNIT_META_KEY] = 'kg';
+    $products[4]->meta['_cjenik_unit_required'] = 'yes';
+    $products[5] = new CatalogTestProduct(5, 'simple', '2.00');
+    $products[5]->meta['_anchor_price'] = '2.00';
+    $products[5]->meta['_cjenik_net_quantity'] = '-3';
+    $gapped = $engine->generate();
+    check(is_array($gapped), 'Gaps in individual products must not block publication.');
+    check(get_option(CJENIK_LAST_ERROR_OPTION, '') === '', 'A price list published with gaps is not an error.');
+    $published = array();
+    foreach (array_slice(explode("\n", trim(file_get_contents($directory . '/' . $gapped['csv_file']))), 1) as $line) {
+        $fields = str_getcsv($line, ';', '"', '');
+        $published[$fields[0]] = array_combine(CatalogEngine::columns(), $fields);
+    }
+    check(!isset($published['Product 2']), 'A product without a retail price has no price in force and must be left out.');
+    check(isset($published['Product 1']) && $published['Product 1']['bazna_cijena'] === '', 'A product on sale without a base price must be listed with an empty base price.');
+    check(isset($published['Product 3']) && $published['Product 3']['bazna_cijena'] === '', 'A negative base price must be published empty, never as entered.');
+    check(isset($published['Product 4']) && $published['Product 4']['cijena_po_jedinici'] === '' && $published['Product 4']['maloprodajna_cijena'] !== '', 'A missing required unit price must not hold back the product.');
+    check(isset($published['Product 5']) && $published['Product 5']['neto_kolicina'] === '' && $published['Product 5']['cijena_po_jedinici'] === '', 'An invalid net quantity must be published empty, with no unit price derived from it.');
+    $warnings = get_option(CJENIK_LAST_WARNINGS_OPTION);
+    check($warnings['skipped_no_price']['count'] === 1 && $warnings['skipped_no_price']['names'] === array('Product 2'), 'Left-out products must be reported by name.');
+    check($warnings['missing_base_price']['count'] === 2 && $warnings['missing_unit_price']['count'] === 1 && $warnings['invalid_quantity']['count'] === 1, 'Every published gap must be counted by kind.');
 
     $products[1]->meta['_anchor_price'] = '10.00';
+    unset($products[2], $products[3], $products[4], $products[5]);
+    check(is_array($engine->generate()) && get_option(CJENIK_LAST_WARNINGS_OPTION, false) === false, 'A complete price list must clear the previous warnings.');
     $test_options['sidrena_cijena_cjenik_kind'] = 'usluge';
     $services = $engine->generate();
     check(is_array($services), 'Services must publish using their own schema.');
@@ -84,4 +113,4 @@ try {
     rmdir($test_upload_dir);
 }
 
-echo "OK: publication, same-minute archives, delimiter, service schema and failed-generation preservation checks passed.\n";
+echo "OK: publication, same-minute archives, delimiter, service schema, partial-data publication and failed-generation preservation checks passed.\n";
