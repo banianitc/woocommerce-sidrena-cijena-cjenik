@@ -5,9 +5,11 @@
 
 Besplatan WordPress dodatak za bazne cijene i javni CSV/XML cjenik. Naziv dodatka ostaje **Sidrena Cijena i Cjenik**.
 
-## Verzija 2.1.1 — sklopiva arhiva cjenika
+## Verzija 2.2.0 — datum objave kao referentni datum
 
-**[Preuzmi instalacijski ZIP 2.1.1](https://github.com/mgracanin/woocommerce-sidrena-cijena-cjenik/releases/download/v2.1.1/sidrena-cijena-v2.1.1.zip)** · [Bilješke izdanja](https://github.com/mgracanin/woocommerce-sidrena-cijena-cjenik/releases/tag/v2.1.1)
+**[Preuzmi instalacijski ZIP 2.2.0](https://github.com/banianitc/woocommerce-sidrena-cijena-cjenik/releases/download/v2.2.0/sidrena-cijena-v2.2.0.zip)** · [Bilješke izdanja](https://github.com/banianitc/woocommerce-sidrena-cijena-cjenik/releases/tag/v2.2.0)
+
+Verzija 2.2.0 nadograđuje izvornu 2.1.1: proizvod objavljen nakon zadanog datuma automatski dobiva dan objave kao referentni datum, oznaka uz `{datum}` prihvaća i oznake poput `%d.%m.%Y.`, a prazne bazne cijene mogu se jednim gumbom popuniti redovnim cijenama. Trgovine na verziji 1.5.0 ovog forka pri nadogradnji automatski prenose spremljene datume.
 
 Ova verzija mijenja strukturu izvoza. Integracije koje čitaju CSV/XML treba prilagoditi prije nadogradnje. Nakon provjere postojećih iznosa, datuma i novih postavki ponovno generirajte cjenik.
 
@@ -27,13 +29,19 @@ Implementacija prati Pravilnik o isticanju bazne cijene proizvoda (1583) i Pravi
 
 Ne postoji vlastiti automatski updater. Nadogradnja se izvodi prijenosom ZIP-a.
 
+### Nadogradnja s 1.5.0 (banianitc fork)
+
+Pri prvom učitavanju nakon nadogradnje datumi spremljeni u `_anchor_price_date` kopiraju se u `_base_price_date` za svaki proizvod i varijaciju koji nemaju uneseni datum. Stari zapisi ostaju zbog mogućeg povratka na 1.5.0. Postojeća oznaka s `%d.%m.%Y.` i dalje radi, a zadana oznaka 1.5.0 prelazi na **Bazna cijena na dan {datum}**. Nakon nadogradnje i dalje vrijede koraci 4–9 iznad, posebno podaci u kartici **Cjenik**.
+
 ## Bazne cijene i datumi
 
-Zadani datum odabire se između **02.05.2025.** za hranu, piće, kozmetiku, sredstva za čišćenje, toaletne potrepštine i proizvode za kućanstvo te **10.09.2026.** za ostalu robu i usluge. Za novu ponudu nakon relevantnog datuma unesite stvarni datum prvog nuđenja. Datum se ne mijenja svakodnevno i nije datum zadnje izmjene proizvoda.
+Zadani datum odabire se između **02.05.2025.** za hranu, piće, kozmetiku, sredstva za čišćenje, toaletne potrepštine i proizvode za kućanstvo te **10.09.2026.** za ostalu robu i usluge. Proizvod bez unesenog datuma dobiva kasniji od zadanog datuma i dana kada je objavljen u trgovini (WooCommerce datum objave), jer se za robu stavljenu u ponudu nakon referentnog datuma primjenjuje dan stavljanja u ponudu (čl. 3. Pravilnika 1583). Ako je proizvod stavljen u ponudu nekog drugog dana, unesite taj datum. Datum se ne mijenja svakodnevno i nije datum zadnje izmjene proizvoda.
 
 Za sniženje na referentni dan primjenjuje se čl. 3. Pravilnika 1583: za skupinu s datumom 02.05.2025. najniža maloprodajna cijena 30 dana prije početka posebnog uvjeta/oblika prodaje; za ostalu robu/usluge prethodno primijenjena maloprodajna cijena. Trgovac mora osigurati povijesnu evidenciju; dodatak je ne može rekonstruirati.
 
-Prazan povijesni iznos više se ne kopira iz današnje cijene i ne prikazuje se kao poznata bazna cijena. Postojeći vlastiti tekst oznake ostaje sačuvan. Samo raniji zadani tekst prelazi na **Bazna cijena na dan {datum}**; oznaku možete proizvoljno preimenovati, uz očuvanje jasnoće.
+Prazan povijesni iznos ne kopira se automatski iz današnje cijene i ne prikazuje se kao poznata bazna cijena. Gumb **Popuni prazna polja redovnim cijenama** u kartici Bazna cijena jednokratno kopira redovnu cijenu (nikad akcijsku) u objavljene proizvode i varijacije bez bazne cijene, osim izuzetih; unesene iznose provjerite prema evidenciji.
+
+Postojeći vlastiti tekst oznake ostaje sačuvan. Samo raniji zadani tekstovi prelaze na **Bazna cijena na dan {datum}**; oznaku možete proizvoljno preimenovati, uz očuvanje jasnoće. Uz `{datum}` (zapis 10.09.2026.) oznaka prihvaća i znakove PHP funkcije `date()` s prefiksom `%`, npr. `%d.%m.%Y.`, `%j. %n. %Y.` ili `%j. %F %Y.` (naziv mjeseca prema jeziku stranice); `%%` je znak postotka. Pregled se prikazuje ispod polja.
 
 Varijabilni i grouped roditelji nisu zasebni retci cjenika. Varijacije i podproizvodi izvoze se zasebno. Bazne cijene varijabilnog proizvoda vidljive su i prije odabira varijacije. Isti iznos i oznaka mogu se objediniti; različiti datumi/iznosi navode se uz naziv varijacije. Nakon odabira prikazuje se točan datum i iznos odabrane varijacije.
 

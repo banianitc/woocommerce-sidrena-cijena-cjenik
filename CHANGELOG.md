@@ -2,6 +2,31 @@
 
 Sve značajne promjene projekta bilježe se u ovoj datoteci.
 
+## [2.2.0] - 2026-11-18
+
+Izdanje banianitc forka na temelju izvorne verzije 2.1.1.
+
+### Dodano
+
+- proizvod bez unesenog datuma bazne cijene objavljen nakon zadanog referentnog datuma dobiva dan objave kao referentni datum (čl. 3. Pravilnika 1583); obrazac proizvoda prikazuje datum koji vrijedi kada je polje prazno
+- tekst oznake uz `{datum}` prihvaća znakove PHP funkcije `date()` s prefiksom `%` (npr. `%d.%m.%Y.`), uz pregled ispod polja
+- gumb za jednokratno popunjavanje praznih baznih cijena redovnim cijenama (nikad akcijskim), bez izuzetih proizvoda
+- datum bazne cijene u brzom uređivanju
+- vrijeme dnevne izrade bira se kao sat (00–23) i minuta (00–59)
+- GitHub izdanje automatski dobiva instalacijski ZIP pri pushu oznake `vX.Y.Z`
+
+### Ispravljeno
+
+- brzo uređivanje više ne šalje polja bazne cijene dvaput, zbog čega se unesena vrijednost zanemarivala
+- neispravni UTF-8 i kontrolni znakovi više ne kvare XML cjenik
+- zaostale privremene datoteke prekinutog generiranja brišu se
+- javni download ETag računa iz metapodataka datoteke umjesto hasha cijele datoteke
+- brojači na kartici Bazna cijena ne broje izuzete proizvode
+
+### Nadogradnja
+
+- s 1.5.0 forka: datumi iz `_anchor_price_date` kopiraju se u `_base_price_date` gdje datum nije unesen; stari zapisi ostaju; zadana oznaka 1.5.0 prelazi na `Bazna cijena na dan {datum}`, a vlastite oznake s `%` oznakama i dalje rade
+
 ## [2.1.1] - 2026-11-16
 
 - zasebna arhiva zadano je zatvorena; `otvoreno="da"` omogućuje početno otvoren prikaz

@@ -4,7 +4,7 @@ Tags: woocommerce, cijena, cjenik, csv, hrvatska
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.1
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Bazne cijene i javni CSV/XML cjenik prema pravilnicima NN 132/2026.
 
 == Description ==
 
-Naziv dodatka ostaje Sidrena Cijena i Cjenik. Od verzije 2.0 možete odrediti referentni datum za svaki proizvod i varijaciju te prilagoditi oznaku pomoću zapisa {datum}. Izvoz podržava neto količinu, zasebni EAN kod te maloprodajne cijene s PDV-om i cijene za jedinicu mjere. Roba i usluge izvoze se u odgovarajućem redoslijedu stupaca.
+Naziv dodatka ostaje Sidrena Cijena i Cjenik. Od verzije 2.0 možete odrediti referentni datum za svaki proizvod i varijaciju te prilagoditi oznaku pomoću zapisa {datum} ili oznaka poput %d.%m.%Y. Proizvod bez unesenog datuma objavljen nakon zadanog datuma dobiva dan objave. Izvoz podržava neto količinu, zasebni EAN kod te maloprodajne cijene s PDV-om i cijene za jedinicu mjere. Roba i usluge izvoze se u odgovarajućem redoslijedu stupaca.
 
 Postojeći iznosi ostaju sačuvani. Ranije automatski kopirane cijene provjerite prema vlastitoj evidenciji. Nepoznate bazne cijene više se ne zamjenjuju aktualnim cijenama. Bez obveznih podataka novo generiranje ne uspijeva, a zadnji cjenik ostaje objavljen.
 
@@ -43,6 +43,14 @@ Pokušaj po završetku zahtjeva koji mijenja proizvod, WP-Cron ponovni pokušaj 
 Ne. Trgovac odgovara za točne povijesne podatke, asortiman, iznimke, poreze i pravodobnu objavu. Potrebna je provjera stvarne trgovine. Detaljne upute i izvori su u README.md repozitorija.
 
 == Changelog ==
+
+= 2.2.0 =
+* Proizvod bez unesenog datuma objavljen nakon zadanog referentnog datuma dobiva dan objave.
+* Oznaka uz {datum} prihvaća oznake datuma poput %d.%m.%Y., s pregledom ispod polja.
+* Gumb za jednokratno popunjavanje praznih baznih cijena redovnim cijenama.
+* Datum bazne cijene u brzom uređivanju; brzo uređivanje više ne šalje polja dvaput.
+* Nadogradnja s 1.5.0 forka prenosi spremljene datume.
+* Odabir sata i minute dnevne izrade, ispravan XML i kod neispravnih znakova, čišćenje zaostalih privremenih datoteka i lakši ETag za javni download.
 
 = 2.1.1 =
 * Arhiva je prema zadanim postavkama zatvorena; popis datoteka otvara se odabirom naslova.
